@@ -20,5 +20,25 @@ dev = [
     "microsoft-python-type-stubs",
 ]
 
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.12"
+reportMissingTypeArgument = "none"
+reportUnnecessaryComparison = "none"
+reportCallInDefaultInitializer = "warning"
+reportPropertyTypeMismatch = "warning"
+reportUninitializedInstanceVariable = "warning"
+reportPrivateUsage = "warning"
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportConstantRedefinition = "warning"
+# these errors are a bit annoying
+reportUnknownMemberType = "none"
+reportUnknownVariableType = "none"
+reportUnknownParameterType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownLambdaType = "none"
+venvPath = "."
+venv = ".venv"
+
 [tool.uv.sources]
 microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git", rev = "76ca370" }
