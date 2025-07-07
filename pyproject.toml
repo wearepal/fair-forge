@@ -1,0 +1,24 @@
+[project]
+name = "fair-forge"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Thomas M Kehrenberg", email = "tmke8@posteo.net" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "scikit-learn>=1.7.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.7.19,<0.8"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "microsoft-python-type-stubs",
+]
+
+[tool.uv.sources]
+microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git", rev = "76ca370" }
