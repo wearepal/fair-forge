@@ -1,4 +1,3 @@
-import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import Flag, StrEnum, auto
@@ -7,6 +6,8 @@ from typing import Protocol, override
 import numpy as np
 from numpy.typing import NDArray
 from sklearn.metrics import confusion_matrix
+
+type Float = float | np.float16 | np.float32 | np.float64
 
 
 class Metric(Protocol):
@@ -17,7 +18,7 @@ class Metric(Protocol):
 
     def __call__(
         self, y_true: NDArray[np.int32], y_pred: NDArray[np.int32]
-    ) -> float: ...
+    ) -> Float: ...
 
 
 class GroupMetric(Protocol):
@@ -32,14 +33,14 @@ class GroupMetric(Protocol):
         y_pred: NDArray[np.int32],
         *,
         groups: NDArray[np.int32],
-    ) -> float: ...
+    ) -> Float: ...
 
 
 class DependencyTarget(StrEnum):
     """The variable that is compared to the predictions in order to check how similar they are."""
 
-    s = auto()
-    y = auto()
+    S = auto()
+    Y = auto()
 
 
 @dataclass
@@ -50,7 +51,7 @@ class RenyiCorrelation(GroupMetric):
     titled "On Measures of Dependence" by Alfréd Rényi.
     """
 
-    base: DependencyTarget = DependencyTarget.s
+    base: DependencyTarget = DependencyTarget.S
 
     @property
     def __name__(self) -> str:
@@ -65,7 +66,7 @@ class RenyiCorrelation(GroupMetric):
         *,
         groups: NDArray[np.int32],
     ) -> float:
-        base_values = y_true if self.base is DependencyTarget.y else groups
+        base_values = y_true if self.base is DependencyTarget.Y else groups
         return self._corr(base_values.ravel(), y_pred.ravel())
 
     @staticmethod
@@ -103,29 +104,26 @@ def _count_true(mask: np.ndarray) -> int:
 def prob_pos(
     y_true: NDArray[np.int32],
     y_pred: NDArray[np.int32],
-    *,
-    groups: NDArray[np.int32],
-) -> float:
+) -> np.float64:
     """Probability of positive prediction."""
-    _, f_pos, _, t_pos = _confusion_matrix(y_pred, y_true)
-    return (t_pos + f_pos) / len(y_pred)
+    _, f_pos, _, t_pos = _confusion_matrix(y_pred=y_pred, y_true=y_true)
+    return ((t_pos + f_pos) / len(y_pred)).astype(np.float64)
 
 
 def prob_neg(
     y_true: NDArray[np.int32],
     y_pred: NDArray[np.int32],
-    *,
-    groups: NDArray[np.int32],
-) -> float:
+) -> np.float64:
     """Probability of negative prediction."""
-    t_neg, _, f_neg, _ = _confusion_matrix(y_pred, y_true)
-    return (t_neg + f_neg) / len(y_pred)
+    t_neg, _, f_neg, _ = _confusion_matrix(y_pred=y_pred, y_true=y_true)
+    return ((t_neg + f_neg) / len(y_pred)).astype(np.float64)
 
 
 def _confusion_matrix(
+    *,
     y_true: NDArray[np.int32],
     y_pred: NDArray[np.int32],
-) -> tuple[int, int, int, int]:
+) -> tuple[np.int64, np.int64, np.int64, np.int64]:
     """Apply sci-kit learn's confusion matrix.
 
     We assume that the positive class is 1.
@@ -173,16 +171,19 @@ class _PerSensMetricBase(GroupMetric):
         y_pred: NDArray[np.int32],
         groups: NDArray[np.int32],
         unique_groups: NDArray[np.int32],
-    ) -> list[float]:
-        return [
-            self.metric(y_true[groups == group], y_pred[groups == group])
-            for group in unique_groups
-        ]
+    ) -> NDArray[np.float64]:
+        return np.array(
+            [
+                self.metric(y_true[groups == group], y_pred[groups == group])
+                for group in unique_groups
+            ],
+            dtype=np.float64,
+        )
 
 
 @dataclass
 class BinaryPerSensMetric(_PerSensMetricBase):
-    aggregator: Callable[[float, float], float]
+    aggregator: Callable[[np.float64, np.float64], np.float64]
 
     @override
     def __call__(
@@ -191,7 +192,7 @@ class BinaryPerSensMetric(_PerSensMetricBase):
         y_pred: NDArray[np.int32],
         *,
         groups: NDArray[np.int32],
-    ) -> float:
+    ) -> Float:
         """Compute the metric for the given predictions and actual values."""
         unique_groups = np.unique(groups)
         assert (
@@ -205,7 +206,7 @@ class BinaryPerSensMetric(_PerSensMetricBase):
 
 @dataclass
 class MulticlassPerSensMetric(_PerSensMetricBase):
-    aggregator: Callable[[Sequence[float]], float]
+    aggregator: Callable[[NDArray[np.float64]], Float]
 
     @override
     def __call__(
@@ -214,7 +215,7 @@ class MulticlassPerSensMetric(_PerSensMetricBase):
         y_pred: NDArray[np.int32],
         *,
         groups: NDArray[np.int32],
-    ) -> float:
+    ) -> Float:
         """Compute the metric for the given predictions and actual values."""
         unique_groups = np.unique(groups)
         group_scores = self._group_scores(
@@ -256,7 +257,7 @@ def per_sens_metrics(
                     metric=metric,
                     agg_name="diff",
                     remove_score_suffix=remove_score_suffix,
-                    aggregator=lambda i, j: i - j,
+                    aggregator=lambda i, j: j - i,
                 )
             )
         if per_sens & PerSens.RATIO:
@@ -265,7 +266,7 @@ def per_sens_metrics(
                     metric=metric,
                     agg_name="ratio",
                     remove_score_suffix=remove_score_suffix,
-                    aggregator=lambda i, j: i / j if j != 0 else math.nan,
+                    aggregator=lambda i, j: i / j if j != 0 else np.float64(np.nan),
                 )
             )
         if per_sens & PerSens.MIN:
@@ -274,7 +275,7 @@ def per_sens_metrics(
                     metric=metric,
                     agg_name="min",
                     remove_score_suffix=remove_score_suffix,
-                    aggregator=min,
+                    aggregator=np.min,
                 )
             )
         if per_sens & PerSens.MAX:
@@ -283,7 +284,7 @@ def per_sens_metrics(
                     metric=metric,
                     agg_name="max",
                     remove_score_suffix=remove_score_suffix,
-                    aggregator=max,
+                    aggregator=np.max,
                 )
             )
     return metrics
