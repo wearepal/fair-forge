@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from enum import Flag, StrEnum, auto
+from enum import Flag, Enum, auto
 from typing import Protocol, override
 
 import numpy as np
@@ -36,11 +36,11 @@ class GroupMetric(Protocol):
     ) -> Float: ...
 
 
-class DependencyTarget(StrEnum):
+class DependencyTarget(Enum):
     """The variable that is compared to the predictions in order to check how similar they are."""
 
-    S = auto()
-    Y = auto()
+    S = "s"
+    Y = "y"
 
 
 @dataclass
