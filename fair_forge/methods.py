@@ -4,6 +4,7 @@ from typing import Protocol, Self
 
 import numpy as np
 from numpy.typing import NDArray
+from sklearn.base import BaseEstimator, ClassifierMixin
 
 from fair_forge.utils import reproducible_random_state
 
@@ -43,7 +44,7 @@ class GroupMethod(Protocol):
 
 
 @dataclass
-class Reweighting(GroupMethod):
+class Reweighting(GroupMethod, ClassifierMixin, BaseEstimator):
     """An implementation of the Reweighing method from Kamiran&Calders, 2012.
 
     Args:
@@ -117,7 +118,7 @@ def compute_instance_weights(
 
 
 @dataclass
-class Majority(Method):
+class Majority(Method, ClassifierMixin, BaseEstimator):
     """Simply returns the majority label from the train set."""
 
     def fit(
@@ -136,7 +137,7 @@ class Majority(Method):
 
 
 @dataclass
-class Blind(Method):
+class Blind(Method, ClassifierMixin, BaseEstimator):
     """A Random classifier.
 
     This is useful as a baseline method and operates a 'coin flip' to assign a label.
