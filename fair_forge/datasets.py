@@ -1,22 +1,31 @@
 from enum import Enum
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Protocol
 
 import numpy as np
 from numpy.typing import NDArray
 import polars as pl
 import polars.selectors as cs
 
+from fair_forge.utils import reproducible_random_state
 
-class Dataset(NamedTuple):
-    """A dataset containing features, labels, and optionally groups.
+
+class Dataset(Protocol):
+    data: NDArray
+    target: NDArray
+    feature_names: list[str]
+
+
+class GroupDataset(NamedTuple):
+    """A dataset containing features, labels, and groups.
 
     Attributes:
-        X: Features of the dataset.
-        y: Labels of the dataset.
-        groups: Optional groups for the dataset.
+        data: Features of the dataset.
+        target: Labels of the dataset.
+        groups: Groups of the dataset.
         name: Name of the dataset.
         feature_grouping: Slices indicating groups of features.
+        feature_names: Names of the features in the dataset.
     """
 
     data: NDArray[np.float32]
@@ -24,6 +33,7 @@ class Dataset(NamedTuple):
     groups: NDArray[np.int32]
     name: str
     feature_grouping: list[slice]
+    feature_names: list[str]
 
 
 class AdultGroup(Enum):
@@ -31,13 +41,13 @@ class AdultGroup(Enum):
     RACE = "Race"
 
 
-def adult_dataset(
+def load_adult(
     group: AdultGroup,
     *,
     group_in_features: bool = False,
     binarize_nationality: bool = False,
     binarize_race: bool = False,
-) -> Dataset:
+) -> GroupDataset:
     """Load the Adult dataset with specified group information.
 
     Args:
@@ -128,10 +138,54 @@ def adult_dataset(
         feature_grouping.append(slice(start, end))
 
     features = df.cast(pl.Float32).to_numpy()
-    return Dataset(
+    return GroupDataset(
         data=features,
         target=y,
         groups=groups,
         name=name,
         feature_grouping=feature_grouping,
+        feature_names=columns,
+    )
+
+
+def load_dummy_dataset(seed: int) -> GroupDataset:
+    """Load a dummy dataset for testing purposes, based on a mixture of 2 2D Gaussians.
+
+    The groups are random.
+
+    Args:
+        seed: Random seed for reproducibility.
+    """
+    generator = reproducible_random_state(seed)
+
+    n_samples = 100
+    n_features = 2
+    n_groups = 2
+
+    # Diagonal covariance matrix for the 2D Gaussian
+    cov = np.eye(n_features)  # Identity matrix for covariance
+    # First generate samples for the first class (n=n_samples // 2)
+    x1 = generator.multivariate_normal(mean=[0.0, 0.0], cov=cov, size=n_samples // 2)
+    y1 = np.zeros(n_samples // 2, dtype=np.int32)
+    groups1 = generator.integers(0, n_groups, size=n_samples // 2, dtype=np.int32)
+    # Then generate samples for the second class (n=n_samples // 2)
+    x2 = generator.multivariate_normal(mean=[1.5, 1.5], cov=cov, size=n_samples // 2)
+    y2 = np.ones(n_samples // 2, dtype=np.int32)
+    groups2 = generator.integers(0, n_groups, size=n_samples // 2, dtype=np.int32)
+    # Concatenate the samples
+    x = np.concatenate((x1, x2), axis=0).astype(np.float32)
+    y = np.concatenate((y1, y2), axis=0)
+    groups = np.concatenate((groups1, groups2), axis=0)
+    # Create feature names
+    feature_names = [f"feature_{i}" for i in range(n_features)]
+    # Create feature grouping (no groupings)
+    feature_grouping = []
+    name = "Dummy Dataset"
+    return GroupDataset(
+        data=x,
+        target=y,
+        groups=groups,
+        name=name,
+        feature_grouping=feature_grouping,
+        feature_names=feature_names,
     )

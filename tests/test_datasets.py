@@ -3,7 +3,7 @@ import numpy as np
 
 
 def test_adult_gender():
-    data = datasets.adult_dataset(
+    data = datasets.load_adult(
         group=datasets.AdultGroup.SEX,
         group_in_features=False,
         binarize_nationality=False,
@@ -26,7 +26,7 @@ def test_adult_gender():
 
 
 def test_adult_race():
-    data = datasets.adult_dataset(
+    data = datasets.load_adult(
         group=datasets.AdultGroup.RACE,
         group_in_features=False,
         binarize_nationality=False,
@@ -50,7 +50,7 @@ def test_adult_race():
 
 
 def test_adult_race_binary():
-    data = datasets.adult_dataset(
+    data = datasets.load_adult(
         group=datasets.AdultGroup.RACE,
         group_in_features=False,
         binarize_nationality=True,
@@ -72,7 +72,7 @@ def test_adult_race_binary():
 
 
 def test_adult_gender_in_features():
-    data = datasets.adult_dataset(
+    data = datasets.load_adult(
         group=datasets.AdultGroup.SEX,
         group_in_features=True,
         binarize_nationality=True,
