@@ -1,5 +1,7 @@
 import numpy as np
 
+__all__ = ["reproducible_random_state"]
+
 
 def reproducible_random_state(seed: int) -> np.random.Generator:
     """Create a random state that is reproducible across Python versions and platforms."""

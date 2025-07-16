@@ -10,6 +10,9 @@ import polars.selectors as cs
 from fair_forge.utils import reproducible_random_state
 
 
+__all__ = ["Dataset", "GroupDataset", "AdultGroup", "load_adult", "load_dummy_dataset"]
+
+
 class Dataset(Protocol):
     data: NDArray
     target: NDArray

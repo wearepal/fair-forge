@@ -1,6 +1,7 @@
-from sklearn.metrics import accuracy_score
-from fair_forge import metrics
 import numpy as np
+from sklearn.metrics import accuracy_score
+
+import fair_forge as ff
 
 
 def test_renyi():
@@ -8,12 +9,12 @@ def test_renyi():
     y_pred = np.array([1, 0, 1, 0, 0, 1], dtype=np.int32)
     groups = np.array([1, 0, 1, 0, 0, 1], dtype=np.int32)
 
-    renyi_y = metrics.RenyiCorrelation(metrics.DependencyTarget.Y)
+    renyi_y = ff.RenyiCorrelation(ff.DependencyTarget.Y)
     result = renyi_y(y_true=y_true, y_pred=y_pred, groups=groups)
     np.testing.assert_allclose(result, 1 / 3)
     assert renyi_y.__name__ == "renyi_y"
 
-    renyi_s = metrics.RenyiCorrelation(metrics.DependencyTarget.S)
+    renyi_s = ff.RenyiCorrelation(ff.DependencyTarget.S)
     result = renyi_s(y_true=y_true, y_pred=y_pred, groups=groups)
     np.testing.assert_allclose(result, 1.0)
     assert renyi_s.__name__ == "renyi_s"
@@ -22,17 +23,17 @@ def test_renyi():
 def test_prob_pos():
     y_true = np.array([1, 0, 1, 0, 1], dtype=np.int32)
     y_pred = np.array([1, 0, 1, 0, 0], dtype=np.int32)
-    result = metrics.prob_pos(y_true=y_true, y_pred=y_pred)
+    result = ff.prob_pos(y_true=y_true, y_pred=y_pred)
     np.testing.assert_allclose(result, 0.4)
-    assert metrics.prob_pos.__name__ == "prob_pos"
+    assert ff.prob_pos.__name__ == "prob_pos"
 
 
 def test_prob_neg():
     y_true = np.array([1, 0, 1, 0, 1], dtype=np.int32)
     y_pred = np.array([1, 0, 1, 0, 0], dtype=np.int32)
-    result = metrics.prob_neg(y_true=y_true, y_pred=y_pred)
+    result = ff.prob_neg(y_true=y_true, y_pred=y_pred)
     np.testing.assert_allclose(result, 0.6)
-    assert metrics.prob_neg.__name__ == "prob_neg"
+    assert ff.prob_neg.__name__ == "prob_neg"
 
 
 def test_per_sens_metrics():
@@ -40,9 +41,9 @@ def test_per_sens_metrics():
     y_pred = np.array([1, 0, 1, 0, 0, 1], dtype=np.int32)
     groups = np.array([1, 1, 1, 0, 0, 0], dtype=np.int32)
 
-    metric_list = metrics.per_sens_metrics(
-        base_metrics=(accuracy_score, metrics.prob_pos),
-        per_sens=metrics.PerSens.ALL,
+    metric_list = ff.per_sens_metrics(
+        base_metrics=(accuracy_score, ff.prob_pos),
+        per_sens=ff.PerSens.ALL,
         remove_score_suffix=True,
     )
     assert len(metric_list) == 8

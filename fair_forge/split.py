@@ -4,6 +4,8 @@ import numpy as np
 from numpy.random import Generator
 from numpy.typing import NDArray
 
+__all__ = ["basic_split", "proportional_split"]
+
 
 def basic_split(
     generator: Generator,

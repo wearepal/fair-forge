@@ -8,6 +8,15 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 
 from fair_forge.utils import reproducible_random_state
 
+__all__ = [
+    "Blind",
+    "GroupMethod",
+    "Majority",
+    "Method",
+    "Reweighting",
+    "SampleWeightMethod",
+]
+
 
 class Method(Protocol):
     def fit(
