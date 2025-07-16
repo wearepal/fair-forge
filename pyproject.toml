@@ -3,24 +3,22 @@ name = "fair-forge"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-authors = [
-    { name = "Thomas M Kehrenberg", email = "tmke8@posteo.net" }
-]
+authors = [{ name = "Thomas M Kehrenberg", email = "tmke8@posteo.net" }]
 requires-python = ">=3.12"
-dependencies = [
-    "polars>=1.31.0",
-    "scikit-learn>=1.7.0",
-]
+dependencies = ["polars>=1.31.0", "scikit-learn>=1.7.0"]
 
 [build-system]
 requires = ["uv_build>=0.7.19,<0.8"]
 build-backend = "uv_build"
 
+[tool.uv.build-backend]
+module-root = ""
+
 [dependency-groups]
-dev = [
-    "microsoft-python-type-stubs",
-    "pytest>=8.4.1",
-]
+dev = ["microsoft-python-type-stubs", "pytest>=8.4.1"]
+
+[tool.uv.sources]
+microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git", rev = "76ca370" }
 
 [tool.pyright]
 typeCheckingMode = "strict"
@@ -41,6 +39,3 @@ reportUnknownArgumentType = "none"
 reportUnknownLambdaType = "none"
 venvPath = "."
 venv = ".venv"
-
-[tool.uv.sources]
-microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git", rev = "76ca370" }
