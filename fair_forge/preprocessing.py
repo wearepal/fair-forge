@@ -2,6 +2,8 @@ from typing import Protocol
 
 from numpy.typing import NDArray
 
+__all__ = ["Preprocessor"]
+
 
 class Preprocessor(Protocol):
     """A protocol for preprocessing methods."""

@@ -11,6 +11,8 @@ from fair_forge.preprocessing import Preprocessor
 from fair_forge.split import basic_split, proportional_split
 from fair_forge.utils import reproducible_random_state
 
+__all__ = ["Split", "evaluate"]
+
 
 class Split(Enum):
     BASIC = "basic"

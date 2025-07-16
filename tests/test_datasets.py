@@ -1,10 +1,11 @@
-from fair_forge import datasets
 import numpy as np
+
+import fair_forge as ff
 
 
 def test_adult_gender():
-    data = datasets.load_adult(
-        group=datasets.AdultGroup.SEX,
+    data = ff.load_adult(
+        group=ff.AdultGroup.SEX,
         group_in_features=False,
         binarize_nationality=False,
         binarize_race=False,
@@ -26,8 +27,8 @@ def test_adult_gender():
 
 
 def test_adult_race():
-    data = datasets.load_adult(
-        group=datasets.AdultGroup.RACE,
+    data = ff.load_adult(
+        group=ff.AdultGroup.RACE,
         group_in_features=False,
         binarize_nationality=False,
         binarize_race=False,
@@ -50,8 +51,8 @@ def test_adult_race():
 
 
 def test_adult_race_binary():
-    data = datasets.load_adult(
-        group=datasets.AdultGroup.RACE,
+    data = ff.load_adult(
+        group=ff.AdultGroup.RACE,
         group_in_features=False,
         binarize_nationality=True,
         binarize_race=True,
@@ -72,8 +73,8 @@ def test_adult_race_binary():
 
 
 def test_adult_gender_in_features():
-    data = datasets.load_adult(
-        group=datasets.AdultGroup.SEX,
+    data = ff.load_adult(
+        group=ff.AdultGroup.SEX,
         group_in_features=True,
         binarize_nationality=True,
         binarize_race=False,
