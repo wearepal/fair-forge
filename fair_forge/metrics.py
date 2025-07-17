@@ -1,12 +1,11 @@
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from enum import Flag, Enum, auto
+from enum import Enum, Flag, auto
 from typing import Protocol, override
 
 import numpy as np
 from numpy.typing import NDArray
 from sklearn.metrics import confusion_matrix
-
 
 __all__ = [
     "DependencyTarget",

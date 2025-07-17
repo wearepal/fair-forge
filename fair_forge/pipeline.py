@@ -66,7 +66,7 @@ def evaluate(
             test_x = preprocessor.transform(test_x)
 
         for method in methods:
-            method_name: str = method.__class__.__name__
+            method_name: str = repr(method)
             if method_name not in result[repeat_index]:
                 result[repeat_index][method_name] = {}
 
