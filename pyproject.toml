@@ -15,7 +15,11 @@ build-backend = "uv_build"
 module-root = ""
 
 [dependency-groups]
-dev = ["microsoft-python-type-stubs", "pytest>=8.4.1"]
+dev = [
+    "microsoft-python-type-stubs",
+ "pytest>=8.4.1",
+ "ruff>=0.12.3",
+]
 
 [tool.uv.sources]
 microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git", rev = "76ca370" }
@@ -39,3 +43,8 @@ reportUnknownArgumentType = "none"
 reportUnknownLambdaType = "none"
 venvPath = "."
 venv = ".venv"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    "F403", # star imports
+]
