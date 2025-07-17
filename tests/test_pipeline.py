@@ -1,16 +1,14 @@
-import numpy as np
+import polars as pl
+from polars.testing import assert_frame_equal
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-from polars.testing import assert_frame_equal
-import polars as pl
 
 import fair_forge as ff
 
 
 def test_pipeline_with_dummy():
     ds = ff.load_dummy_dataset(seed=42)
-    random_state = np.random.RandomState(42)
-    lr = LogisticRegression(random_state=random_state, max_iter=10)
+    lr = LogisticRegression(random_state=42, max_iter=10)
     blind = ff.Blind(seed=42)
     metrics = ff.per_sens_metrics(
         [ff.prob_pos], per_sens=ff.PerSens.MIN_MAX, remove_score_suffix=True
@@ -30,7 +28,7 @@ def test_pipeline_with_dummy():
     )
 
     assert_frame_equal(
-        result["LogisticRegression"],
+        result["LogisticRegression(max_iter=10, random_state=42)"],
         pl.DataFrame(
             {
                 "accuracy": [0.8, 0.95],
@@ -39,3 +37,5 @@ def test_pipeline_with_dummy():
             }
         ),
     )
+
+    assert "Blind(seed=42)" in result

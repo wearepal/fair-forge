@@ -15,11 +15,7 @@ build-backend = "uv_build"
 module-root = ""
 
 [dependency-groups]
-dev = [
-    "microsoft-python-type-stubs",
- "pytest>=8.4.1",
- "ruff>=0.12.3",
-]
+dev = ["microsoft-python-type-stubs", "pytest>=8.4.1", "ruff>=0.12.3"]
 
 [tool.uv.sources]
 microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git", rev = "76ca370" }
@@ -41,10 +37,21 @@ reportUnknownVariableType = "none"
 reportUnknownParameterType = "none"
 reportUnknownArgumentType = "none"
 reportUnknownLambdaType = "none"
+include = ["fair_forge", "tests"]
 venvPath = "."
 venv = ".venv"
+
+[tool.ruff.lint]
+# defaults: `E4`, E7`, `E9`, and `F`
+select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
     "F403", # star imports
 ]
+
+[tool.ruff.lint.isort]
+extra-standard-library = ["typing_extensions"]
+no-lines-before = ["future", "standard-library"]
+force-sort-within-sections = true
+split-on-trailing-comma = false

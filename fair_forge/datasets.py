@@ -9,7 +9,6 @@ import polars.selectors as cs
 
 from fair_forge.utils import reproducible_random_state
 
-
 __all__ = [
     "AdultGroup",
     "Dataset",
