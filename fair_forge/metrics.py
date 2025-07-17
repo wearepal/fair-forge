@@ -15,9 +15,12 @@ __all__ = [
     "Metric",
     "PerSens",
     "RenyiCorrelation",
+    "cv",
     "per_sens_metrics",
     "prob_neg",
     "prob_pos",
+    "tnr",
+    "tpr",
 ]
 
 type Float = float | np.float16 | np.float32 | np.float64
@@ -132,6 +135,24 @@ def prob_neg(
     return ((t_neg + f_neg) / len(y_pred)).astype(np.float64)
 
 
+def tpr(
+    y_true: NDArray[np.int32],
+    y_pred: NDArray[np.int32],
+) -> np.float64:
+    """True Positive Rate (TPR) or Sensitivity."""
+    _, _, f_neg, t_pos = _confusion_matrix(y_pred=y_pred, y_true=y_true)
+    return (t_pos / (t_pos + f_neg)).astype(np.float64)
+
+
+def tnr(
+    y_true: NDArray[np.int32],
+    y_pred: NDArray[np.int32],
+) -> np.float64:
+    """True Negative Rate (TNR) or Specificity."""
+    t_neg, f_pos, _, _ = _confusion_matrix(y_pred=y_pred, y_true=y_true)
+    return (t_neg / (t_neg + f_pos)).astype(np.float64)
+
+
 def _confusion_matrix(
     *,
     y_true: NDArray[np.int32],
@@ -208,9 +229,9 @@ class BinaryPerSensMetric(_PerSensMetricBase):
     ) -> Float:
         """Compute the metric for the given predictions and actual values."""
         unique_groups = np.unique(groups)
-        assert (
-            len(unique_groups) == 2
-        ), f"PerSensMetric with {self.agg_name} requires exactly two groups for aggregation"
+        assert len(unique_groups) == 2, (
+            f"PerSensMetric with {self.agg_name} requires exactly two groups for aggregation"
+        )
         group_scores = self._group_scores(
             y_true=y_true, y_pred=y_pred, groups=groups, unique_groups=unique_groups
         )
@@ -240,6 +261,8 @@ class MulticlassPerSensMetric(_PerSensMetricBase):
 class PerSens(Flag):
     """Aggregation methods for metrics that are computed per sensitive attributes."""
 
+    INDIVIDUAL = auto()
+    """Individual per-group results."""
     DIFF = auto()
     """Difference of the per-group results."""
     MAX = auto()
@@ -250,15 +273,15 @@ class PerSens(Flag):
     """Equivalent to ``MIN | MAX``."""
     RATIO = auto()
     """Ratio of the per-group results."""
-    DIFF_RATIO = DIFF | RATIO
-    """Equivalent to ``DIFFS | RATIOS``."""
+    DIFF_RATIO = INDIVIDUAL | DIFF | RATIO
+    """Equivalent to ``INDIVIDUAL | DIFF | RATIO``."""
     ALL = DIFF_RATIO | MIN_MAX
     """All aggregations."""
 
 
 def per_sens_metrics(
     base_metrics: Sequence[Metric],
-    per_sens: PerSens,
+    per_sens: PerSens = PerSens.DIFF_RATIO,
     remove_score_suffix: bool = True,
 ) -> list[GroupMetric]:
     """Create per-sensitive attribute metrics from base metrics."""
@@ -300,4 +323,42 @@ def per_sens_metrics(
                     aggregator=np.max,
                 )
             )
+        if per_sens & PerSens.INDIVIDUAL:
+            metrics.append(
+                BinaryPerSensMetric(
+                    metric=metric,
+                    agg_name="0",
+                    remove_score_suffix=remove_score_suffix,
+                    aggregator=lambda i, j: i,
+                )
+            )
+            metrics.append(
+                BinaryPerSensMetric(
+                    metric=metric,
+                    agg_name="1",
+                    remove_score_suffix=remove_score_suffix,
+                    aggregator=lambda i, j: j,
+                )
+            )
     return metrics
+
+
+def cv(
+    y_true: NDArray[np.int32],
+    y_pred: NDArray[np.int32],
+    *,
+    groups: NDArray[np.int32],
+) -> Float:
+    """Calder-Verwer."""
+    unique_groups = np.unique(groups)
+    assert len(unique_groups) == 2, (
+        f"Calder-Verwer requires exactly two groups, got {len(unique_groups)}"
+    )
+    group_scores = np.array(
+        [
+            prob_pos(y_true[groups == group], y_pred[groups == group])
+            for group in unique_groups
+        ],
+        dtype=np.float64,
+    )
+    return 1 - (group_scores[1] - group_scores[0])

@@ -10,7 +10,14 @@ import polars.selectors as cs
 from fair_forge.utils import reproducible_random_state
 
 
-__all__ = ["Dataset", "GroupDataset", "AdultGroup", "load_adult", "load_dummy_dataset"]
+__all__ = [
+    "AdultGroup",
+    "Dataset",
+    "GroupDataset",
+    "grouping_by_prefix",
+    "load_adult",
+    "load_dummy_dataset",
+]
 
 
 class Dataset(Protocol):
@@ -126,19 +133,10 @@ def load_adult(
     # Convert categorical columns to one-hot encoded features
     df = df.to_dummies(to_dummies, separator=":")
 
-    feature_grouping: list[slice] = []
     columns = df.columns
-    for prefix in column_grouping_prefixes:
-        # Find the indices of columns that start with the prefix
-        indices = [i for i, col in enumerate(columns) if col.startswith(prefix + ":")]
-        if not indices:
-            raise ValueError(f"No columns found with prefix '{prefix}'.")
-        start = min(indices)
-        end = max(indices) + 1
-        assert all(
-            i in indices for i in range(start, end)
-        ), f"The columns correponding to prefix '{prefix}' are not contiguous."
-        feature_grouping.append(slice(start, end))
+    feature_grouping = grouping_by_prefix(
+        columns=columns, prefixes=[f"{col}:" for col in column_grouping_prefixes]
+    )
 
     features = df.cast(pl.Float32).to_numpy()
     return GroupDataset(
@@ -149,6 +147,23 @@ def load_adult(
         feature_grouping=feature_grouping,
         feature_names=columns,
     )
+
+
+def grouping_by_prefix(*, columns: list[str], prefixes: list[str]) -> list[slice]:
+    """Create slices for feature grouping based on column prefixes."""
+    feature_grouping: list[slice] = []
+    for prefix in prefixes:
+        # Find the indices of columns that start with the prefix
+        indices = [i for i, col in enumerate(columns) if col.startswith(prefix)]
+        if not indices:
+            raise ValueError(f"No columns found with prefix '{prefix}'.")
+        start = min(indices)
+        end = max(indices) + 1
+        assert all(i in indices for i in range(start, end)), (
+            f"The columns correponding to prefix '{prefix}' are not contiguous."
+        )
+        feature_grouping.append(slice(start, end))
+    return feature_grouping
 
 
 def load_dummy_dataset(seed: int) -> GroupDataset:
