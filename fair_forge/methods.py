@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from functools import cached_property
 from typing import Protocol, Self
 
@@ -18,17 +18,20 @@ __all__ = [
 ]
 
 
-class Method(Protocol):
+class _MethodBase(Protocol):
+    def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]: ...
+    def get_params(self, deep: bool = ...) -> dict[str, object]: ...
+
+
+class Method(_MethodBase, Protocol):
     def fit(
         self,
         X: NDArray[np.float32],
         y: NDArray[np.int32],
     ) -> Self: ...
 
-    def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]: ...
 
-
-class SampleWeightMethod(Protocol):
+class SampleWeightMethod(_MethodBase, Protocol):
     def fit(
         self,
         X: NDArray[np.float32],
@@ -37,10 +40,8 @@ class SampleWeightMethod(Protocol):
         sample_weight: NDArray[np.float64],
     ) -> Self: ...
 
-    def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]: ...
 
-
-class GroupMethod(Protocol):
+class GroupMethod(_MethodBase, Protocol):
     def fit(
         self,
         X: NDArray[np.float32],
@@ -48,8 +49,6 @@ class GroupMethod(Protocol):
         *,
         groups: NDArray[np.int32],
     ) -> Self: ...
-
-    def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]: ...
 
 
 @dataclass
@@ -78,6 +77,12 @@ class Reweighting(GroupMethod, ClassifierMixin, BaseEstimator):
     def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]:
         """Predict using the fitted model."""
         return self.base_method.predict(X)
+
+    def get_params(self, deep: bool = True) -> dict[str, object]:
+        params: dict[str, object] = {"name": self.base_method.__class__.__name__}
+        if deep:
+            params.update(self.base_method.get_params(deep=True))
+        return {"base_method": params}
 
 
 def compute_instance_weights(
@@ -144,6 +149,9 @@ class Majority(Method, ClassifierMixin, BaseEstimator):
         """Predict the majority class for all samples."""
         return np.full(X.shape[0], self.majority_class, dtype=np.int32)
 
+    def get_params(self, deep: bool = True) -> dict[str, object]:
+        return {}
+
 
 @dataclass
 class Blind(Method, ClassifierMixin, BaseEstimator):
@@ -174,3 +182,6 @@ class Blind(Method, ClassifierMixin, BaseEstimator):
         return self.random_state.choice(
             self.classes, size=X.shape[0], replace=True
         ).astype(np.int32)
+
+    def get_params(self, deep: bool = True) -> dict[str, object]:
+        return asdict(self)

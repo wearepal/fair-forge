@@ -27,15 +27,38 @@ def test_pipeline_with_dummy():
         remove_score_suffix=True,
     )
 
+    lr_results = result[0]
+    assert lr_results.method_name == "LogisticRegression"
+    # TODO: Only check a subset of the parameters.
+    assert lr_results.params == {
+        "C": 1.0,
+        "class_weight": None,
+        "dual": False,
+        "fit_intercept": True,
+        "intercept_scaling": 1,
+        "l1_ratio": None,
+        "max_iter": 10,
+        "multi_class": "deprecated",
+        "n_jobs": None,
+        "penalty": "l2",
+        "random_state": 42,
+        "solver": "lbfgs",
+        "tol": 0.0001,
+        "verbose": 0,
+        "warm_start": False,
+    }
+
     assert_frame_equal(
-        result["LogisticRegression(max_iter=10, random_state=42)"],
+        lr_results.scores,
         pl.DataFrame(
             {
-                "accuracy": [0.8, 0.95],
-                "prob_pos_min": [0.46153846153846156, 0.23076923076923078],
-                "prob_pos_max": [0.7142857142857143, 0.7142857142857143],
+                "repeat_index": [0, 1],
+                "split_seed": [42, 43],
+                "accuracy": [0.8, 0.9],
+                "prob_pos_min": [0.46153846153846156, 0.38461538461538464],
+                "prob_pos_max": [0.7142857142857143, 0.5714285714285714],
             }
         ),
     )
 
-    assert "Blind(seed=42)" in result
+    assert result[1].method_name == "Blind"
