@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from enum import Enum
-from typing import cast
+from typing import NamedTuple, cast
 
 import polars as pl
 
@@ -19,6 +19,12 @@ class Split(Enum):
     PROPORTIONAL = "proportional"
 
 
+class Result(NamedTuple):
+    method_name: str
+    params: dict[str, object]
+    scores: pl.DataFrame
+
+
 def evaluate(
     dataset: GroupDataset,
     methods: Sequence[Method | GroupMethod],
@@ -31,14 +37,12 @@ def evaluate(
     seed: int = 42,
     train_percentage: float = 0.8,
     remove_score_suffix: bool = True,
-) -> dict[str, pl.DataFrame]:
-    result: dict[int, dict[str, dict[str, Float]]] = {}
-
-    generator = reproducible_random_state(seed)
+) -> list[Result]:
+    result: list[list[tuple[str, dict[str, object], dict[str, Float]]]] = []
 
     for repeat_index in range(repeat):
-        if repeat_index not in result:
-            result[repeat_index] = {}
+        split_seed = seed + repeat_index
+        generator = reproducible_random_state(split_seed)
         match split:
             case Split.BASIC:
                 train_idx, test_idx = basic_split(
@@ -65,10 +69,12 @@ def evaluate(
             train_x = preprocessor.fit(train_x).transform(train_x)
             test_x = preprocessor.transform(test_x)
 
+        result_for_repeat: list[tuple[str, dict[str, object], dict[str, Float]]] = []
         for method in methods:
-            method_name: str = repr(method)
-            if method_name not in result[repeat_index]:
-                result[repeat_index][method_name] = {}
+            method_name: str = method.__class__.__name__
+            scores: dict[str, Float] = {}
+            scores["repeat_index"] = repeat_index
+            scores["split_seed"] = split_seed
 
             # If a method requests `groups` in its metadata, we cast it to GroupMethod.
             if "groups" in method.get_metadata_routing().fit.requests:  # type: ignore
@@ -87,22 +93,30 @@ def evaluate(
                 if remove_score_suffix and metric_name.endswith("_score"):
                     metric_name = metric_name[:-6]
                 score = metric(y_true=test_y, y_pred=predictions)
-                result[repeat_index][method_name][metric_name] = score
+                scores[metric_name] = score
 
             for group_metric in group_metrics:
                 group_metric_name = group_metric.__name__
                 group_score = group_metric(
                     y_true=test_y, y_pred=predictions, groups=test_groups
                 )
-                result[repeat_index][method_name][group_metric_name] = group_score
+                scores[group_metric_name] = group_score
+            result_for_repeat.append((method_name, method.get_params(), scores))
+        result.append(result_for_repeat)
 
     # Convert the result dictionary to a Polars DataFrame
     # We have to perform a kind of "transpose" operation here
-    method_names = list(result[0])
-    r: dict[str, pl.DataFrame] = {}
-    for method_name in method_names:
+    names_and_params = [(i, entry[0], entry[1]) for i, entry in enumerate(result[0])]
+    r: list[Result] = []
+    for i, method_name, params in names_and_params:
         df = pl.DataFrame(
-            [result[repeat_index][method_name] for repeat_index in range(repeat)]
+            [result[repeat_index][i][2] for repeat_index in range(repeat)]
         )
-        r[method_name] = df
+        r.append(
+            Result(
+                method_name=method_name,
+                params=params,
+                scores=df,
+            )
+        )
     return r
