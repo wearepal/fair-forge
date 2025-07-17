@@ -46,7 +46,7 @@ def test_per_sens_metrics():
         per_sens=ff.PerSens.ALL,
         remove_score_suffix=True,
     )
-    assert len(metric_list) == 8
+    assert len(metric_list) == 12
 
     metric = metric_list[0]
     assert metric.__name__ == "accuracy_diff"
@@ -69,21 +69,41 @@ def test_per_sens_metrics():
     np.testing.assert_allclose(result, 1.0)
 
     metric = metric_list[4]
-    assert metric.__name__ == "prob_pos_diff"
+    assert metric.__name__ == "accuracy_0"
     result = metric(y_true=y_true, y_pred=y_pred, groups=groups)
     np.testing.assert_allclose(result, 1 / 3)
 
     metric = metric_list[5]
-    assert metric.__name__ == "prob_pos_ratio"
+    assert metric.__name__ == "accuracy_1"
     result = metric(y_true=y_true, y_pred=y_pred, groups=groups)
-    np.testing.assert_allclose(result, 1 / 2)
+    np.testing.assert_allclose(result, 1.0)
 
     metric = metric_list[6]
-    assert metric.__name__ == "prob_pos_min"
+    assert metric.__name__ == "prob_pos_diff"
     result = metric(y_true=y_true, y_pred=y_pred, groups=groups)
     np.testing.assert_allclose(result, 1 / 3)
 
     metric = metric_list[7]
+    assert metric.__name__ == "prob_pos_ratio"
+    result = metric(y_true=y_true, y_pred=y_pred, groups=groups)
+    np.testing.assert_allclose(result, 1 / 2)
+
+    metric = metric_list[8]
+    assert metric.__name__ == "prob_pos_min"
+    result = metric(y_true=y_true, y_pred=y_pred, groups=groups)
+    np.testing.assert_allclose(result, 1 / 3)
+
+    metric = metric_list[9]
     assert metric.__name__ == "prob_pos_max"
+    result = metric(y_true=y_true, y_pred=y_pred, groups=groups)
+    np.testing.assert_allclose(result, 2 / 3)
+
+    metric = metric_list[10]
+    assert metric.__name__ == "prob_pos_0"
+    result = metric(y_true=y_true, y_pred=y_pred, groups=groups)
+    np.testing.assert_allclose(result, 1 / 3)
+
+    metric = metric_list[11]
+    assert metric.__name__ == "prob_pos_1"
     result = metric(y_true=y_true, y_pred=y_pred, groups=groups)
     np.testing.assert_allclose(result, 2 / 3)

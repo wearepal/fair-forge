@@ -72,7 +72,7 @@ class RenyiCorrelation(GroupMetric):
     @property
     def __name__(self) -> str:
         """The name of the metric."""
-        return f"renyi_{self.base}"
+        return f"renyi_{self.base.value}"
 
     @override
     def __call__(
