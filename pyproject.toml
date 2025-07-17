@@ -18,7 +18,7 @@ module-root = ""
 dev = ["microsoft-python-type-stubs", "pytest>=8.4.1", "ruff>=0.12.3"]
 
 [tool.uv.sources]
-microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git", rev = "76ca370" }
+microsoft-python-type-stubs = { git = "https://github.com/tmke8/python-type-stubs.git", rev = "66c94a2" }
 
 [tool.pyright]
 typeCheckingMode = "strict"
@@ -43,7 +43,7 @@ venv = ".venv"
 
 [tool.ruff.lint]
 # defaults: `E4`, E7`, `E9`, and `F`
-select = ["E4", "E7", "E9", "F", "I"]
+select = ["E4", "E7", "E9", "F", "I", "PLC", "PLE", "PLW", "UP", "NPY", "FURB", "RUF", "PT", "PTH"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [

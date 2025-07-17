@@ -35,7 +35,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "microsoft-python-type-stubs", git = "https://github.com/microsoft/python-type-stubs.git?rev=76ca370" },
+    { name = "microsoft-python-type-stubs", git = "https://github.com/tmke8/python-type-stubs.git?rev=66c94a2" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "ruff", specifier = ">=0.12.3" },
 ]
@@ -61,7 +61,7 @@ wheels = [
 [[package]]
 name = "microsoft-python-type-stubs"
 version = "0"
-source = { git = "https://github.com/microsoft/python-type-stubs.git?rev=76ca370#76ca3704d162cf76920f5871d82cbc3831372e31" }
+source = { git = "https://github.com/tmke8/python-type-stubs.git?rev=66c94a2#66c94a2fe337b3b66d4873b0e57ddeb2a0405313" }
 
 [[package]]
 name = "numpy"

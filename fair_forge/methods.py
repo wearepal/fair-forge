@@ -1,10 +1,10 @@
 from dataclasses import asdict, dataclass
-from functools import cached_property
-from typing import Protocol, Self
+from typing import Any, Protocol, Self
 
 import numpy as np
 from numpy.typing import NDArray
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator
+from sklearn.utils.metadata_routing import MetadataRequest
 
 from fair_forge.utils import reproducible_random_state
 
@@ -21,14 +21,12 @@ __all__ = [
 class _MethodBase(Protocol):
     def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]: ...
     def get_params(self, deep: bool = ...) -> dict[str, object]: ...
+    def set_params(self, **kwargs: Any) -> Self: ...
+    def get_metadata_routing(self) -> MetadataRequest: ...
 
 
 class Method(_MethodBase, Protocol):
-    def fit(
-        self,
-        X: NDArray[np.float32],
-        y: NDArray[np.int32],
-    ) -> Self: ...
+    def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self: ...
 
 
 class SampleWeightMethod(_MethodBase, Protocol):
@@ -43,16 +41,12 @@ class SampleWeightMethod(_MethodBase, Protocol):
 
 class GroupMethod(_MethodBase, Protocol):
     def fit(
-        self,
-        X: NDArray[np.float32],
-        y: NDArray[np.int32],
-        *,
-        groups: NDArray[np.int32],
+        self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
     ) -> Self: ...
 
 
 @dataclass
-class Reweighting(GroupMethod, ClassifierMixin, BaseEstimator):
+class Reweighting(BaseEstimator, GroupMethod):
     """An implementation of the Reweighing method from Kamiran&Calders, 2012.
 
     Args:
@@ -63,14 +57,10 @@ class Reweighting(GroupMethod, ClassifierMixin, BaseEstimator):
     base_method: SampleWeightMethod
 
     def fit(
-        self,
-        X: NDArray[np.float32],
-        y: NDArray[np.int32],
-        *,
-        groups: NDArray[np.int32],
+        self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
     ) -> Self:
         """Fit the model with reweighting based on group information."""
-        sample_weight = compute_instance_weights(y, groups=groups)
+        sample_weight = _compute_instance_weights(y, groups=groups)
         self.base_method.fit(X, y, sample_weight=sample_weight)
         return self
 
@@ -85,7 +75,7 @@ class Reweighting(GroupMethod, ClassifierMixin, BaseEstimator):
         return {"base_method": params}
 
 
-def compute_instance_weights(
+def _compute_instance_weights(
     y: NDArray[np.int32],
     *,
     groups: NDArray[np.int32],
@@ -132,14 +122,10 @@ def compute_instance_weights(
 
 
 @dataclass
-class Majority(Method, ClassifierMixin, BaseEstimator):
+class Majority(BaseEstimator, Method):
     """Simply returns the majority label from the train set."""
 
-    def fit(
-        self,
-        X: NDArray[np.float32],
-        y: NDArray[np.int32],
-    ) -> Self:
+    def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self:
         """Fit the model by storing the majority class."""
         classes, counts = np.unique(y, return_counts=True)
         self.majority_class: np.int32 = classes[np.argmax(counts)]
@@ -154,34 +140,26 @@ class Majority(Method, ClassifierMixin, BaseEstimator):
 
 
 @dataclass
-class Blind(Method, ClassifierMixin, BaseEstimator):
+class Blind(BaseEstimator, Method):
     """A Random classifier.
 
     This is useful as a baseline method and operates a 'coin flip' to assign a label.
     Returns a random label.
     """
 
-    seed: int = 0
+    random_state: int = 0
 
-    @cached_property
-    def random_state(self) -> np.random.Generator:
-        """Create a reproducible random state."""
-        return reproducible_random_state(self.seed)
-
-    def fit(
-        self,
-        X: NDArray[np.float32],
-        y: NDArray[np.int32],
-    ) -> Self:
+    def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self:
         """Fit the model by storing the classes."""
         self.classes = np.unique(y)
         return self
 
     def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]:
         """Predict a random label for all samples."""
-        return self.random_state.choice(
-            self.classes, size=X.shape[0], replace=True
-        ).astype(np.int32)
+        random_state = reproducible_random_state(self.random_state)
+        return random_state.choice(self.classes, size=X.shape[0], replace=True).astype(
+            np.int32
+        )
 
     def get_params(self, deep: bool = True) -> dict[str, object]:
         return asdict(self)

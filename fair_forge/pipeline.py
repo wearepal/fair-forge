@@ -66,7 +66,7 @@ def evaluate(
         test_groups = dataset.groups[test_idx]
 
         if preprocessor is not None:
-            train_x = preprocessor.fit(train_x).transform(train_x)
+            train_x = preprocessor.fit(train_x, train_y).transform(train_x)
             test_x = preprocessor.transform(test_x)
 
         result_for_repeat: list[tuple[str, dict[str, object], dict[str, Float]]] = []
@@ -77,7 +77,7 @@ def evaluate(
             scores["split_seed"] = split_seed
 
             # If a method requests `groups` in its metadata, we cast it to GroupMethod.
-            if "groups" in method.get_metadata_routing().fit.requests:  # type: ignore
+            if "groups" in method.get_metadata_routing().fit.requests:
                 cast(GroupMethod, method).fit(
                     train_x,
                     train_y,
