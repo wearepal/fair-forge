@@ -41,6 +41,7 @@ reportUnknownVariableType = "none"
 reportUnknownParameterType = "none"
 reportUnknownArgumentType = "none"
 reportUnknownLambdaType = "none"
+include = ["fair_forge", "tests"]
 venvPath = "."
 venv = ".venv"
 
