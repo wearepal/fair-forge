@@ -28,19 +28,26 @@ class GroupPreMethod(_PreprocessorBase, Protocol):
     def fit(
         self,
         X: NDArray[np.float32],
-        y: NDArray[np.int32],
         *,
+        targets: NDArray[np.int32],
         groups: NDArray[np.int32],
     ) -> Self:
         """Fit the preprocessing method to the data with group information."""
         ...
 
-    @overload
-    def transform(self, X: NDArray[np.float32]) -> NDArray[np.float32]: ...
-    @overload
-    def transform(
-        self, X: NDArray[np.float32], *, y: NDArray[np.int32], groups: NDArray[np.int32]
-    ) -> tuple[NDArray[np.float32], NDArray[np.int32], NDArray[np.int32]]: ...
+    def transform[S: np.generic](
+        self,
+        X: NDArray[S],
+        *,
+        targets: NDArray[np.int32] | None = None,
+        groups: NDArray[np.int32] | None = None,
+    ) -> NDArray[S]: ...
+
     def fit_transform(
-        self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
-    ) -> tuple[NDArray[np.float32], NDArray[np.int32], NDArray[np.int32]]: ...
+        self,
+        X: NDArray[np.float32],
+        y: None,
+        *,
+        targets: NDArray[np.int32],
+        groups: NDArray[np.int32],
+    ) -> NDArray[np.float32]: ...

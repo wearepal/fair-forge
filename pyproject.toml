@@ -18,7 +18,7 @@ module-root = ""
 dev = ["microsoft-python-type-stubs", "pytest>=8.4.1", "ruff>=0.12.3"]
 
 [tool.uv.sources]
-microsoft-python-type-stubs = { git = "https://github.com/tmke8/python-type-stubs.git", rev = "66c94a2" }
+microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git", rev = "ee6d039" }
 
 [tool.pyright]
 typeCheckingMode = "strict"

@@ -12,11 +12,17 @@ def test_upsampler():
     groups = np.array([0, 1, 0, 1, 1], dtype=np.int32)
     with config_context(enable_metadata_routing=True):
         lr = LogisticRegression(random_state=42, max_iter=10)
+        lr = ff.EstimatorForTransformedLabels(lr)
+        lr.set_fit_request(targets=True)
         upsampler = ff.Upsampler(strategy=ff.UpsampleStrategy.NAIVE, random_state=42)
-        upsampler.set_fit_request(groups=True)
-        # upsampler.set_transform_request(y=True, groups=True)
-        upsampler.set_transform_request(groups=True)
-        pipeline = Pipeline([("upsampler", upsampler), ("classifier", lr)])
-        pipeline.fit(X, y, groups=groups)
-        pipeline.predict(X)
-    assert False
+        upsampler.set_fit_request(groups=True, targets=True)
+        upsampler.set_transform_request(groups=True, targets=True)
+        pipeline = Pipeline(
+            [("upsampler", upsampler), ("classifier", lr)],
+            transform_input=["groups", "targets"],
+        )
+        pipeline.fit(X, None, groups=groups, targets=y)
+        predictions = pipeline.predict(X)
+        np.testing.assert_allclose(
+            predictions, np.array([0, 0, 1, 1, 1], dtype=np.int32)
+        )

@@ -60,6 +60,12 @@ class Reweighting(BaseEstimator, GroupMethod):
         self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
     ) -> Self:
         """Fit the model with reweighting based on group information."""
+        # Verify that the input parameters all have the same length
+        if not (len(X) == len(y) == len(groups)):
+            raise ValueError(
+                "X, y, and groups must all have the same length. "
+                f"Got lengths {len(X)}, {len(y)}, and {len(groups)}."
+            )
         sample_weight = _compute_instance_weights(y, groups=groups)
         self.base_method.fit(X, y, sample_weight=sample_weight)
         return self
