@@ -1,4 +1,4 @@
-from typing import Protocol, Self, overload
+from typing import Protocol, Self
 
 import numpy as np
 from numpy.typing import NDArray

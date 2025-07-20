@@ -27,6 +27,7 @@ class EstimatorForTransformedLabels(BaseEstimator):
         targets: NDArray[np.int32],
     ) -> Self:
         self.estimator.fit(X, targets)
+        self.fitted_ = True
         return self
 
     def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]:
@@ -60,33 +61,33 @@ class Upsampler(BaseEstimator, GroupPreMethod):
             itertools.product(s_vals, y_vals)
         )
 
-        data: dict[tuple[np.int32, np.int32], np.int64] = {}
+        data: list[tuple[NDArray[np.bool], np.int64, np.int64, np.int64]] = []
         for s_val, y_val in segments:
             s_y_mask: NDArray[np.bool] = (groups == s_val) & (targets == y_val)
-            data[(s_val, y_val)] = np.count_nonzero(s_y_mask)
+            y_eq_y = np.count_nonzero(targets == y_val)
+            s_eq_s = np.count_nonzero(groups == s_val)
+            data.append((s_y_mask, np.count_nonzero(s_y_mask), y_eq_y, s_eq_s))
 
-        percentages: dict[tuple[np.int32, np.int32], np.float64] = {}
+        percentages: list[tuple[NDArray[np.bool], np.float64]] = []
 
-        vals = list(data.values())
+        vals = list([d[1] for d in data])
 
-        for key, length in data.items():
+        for mask, length, y_eq_y, s_eq_s in data:
             if self.strategy is UpsampleStrategy.NAIVE:
-                percentages[key] = (np.max(vals) / length).astype(np.float64)
+                percentages.append((mask, (np.max(vals) / length).astype(np.float64)))
             else:
-                s_val = key[0]
-                y_val = key[1]
-
-                y_eq_y = np.count_nonzero(targets == y_val)
-                s_eq_s = np.count_nonzero(groups == s_val)
-
                 num_samples = len(targets)
                 num_batch = length
 
-                percentages[key] = (y_eq_y * s_eq_s / (num_batch * num_samples)).astype(
-                    np.float64
+                percentages.append(
+                    (
+                        mask,
+                        (y_eq_y * s_eq_s / (num_batch * num_samples)).astype(
+                            np.float64
+                        ),
+                    )
                 )
-        self.percentages = percentages
-        print(f"Percentages: {self.percentages}")
+        self.percentages_ = percentages
         return self
 
     def transform[S: np.generic](
@@ -98,11 +99,9 @@ class Upsampler(BaseEstimator, GroupPreMethod):
     ) -> NDArray[S]:
         if targets is None or groups is None:
             return X  # we're in test mode, no upsampling needed
-        print("Upsampling...")
         upsampled: list[NDArray[S]] = []
         generator = reproducible_random_state(self.random_state)
-        for (s_val, y_val), percentage in self.percentages.items():
-            mask: NDArray[np.bool] = (groups == s_val) & (targets == y_val)
+        for mask, percentage in self.percentages_:
             segment_len = np.count_nonzero(mask)
             required = round(percentage * segment_len)
             indices: NDArray[np.int64] = generator.choice(
@@ -124,6 +123,5 @@ class Upsampler(BaseEstimator, GroupPreMethod):
         groups: NDArray[np.int32],
     ) -> NDArray[np.float32]:
         """Fit the upsampler and transform the data."""
-        print("Transforming X...")
         self.fit(X, targets=targets, groups=groups)
         return self.transform(X, targets=targets, groups=groups)

@@ -134,12 +134,12 @@ class Majority(BaseEstimator, Method):
     def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self:
         """Fit the model by storing the majority class."""
         classes, counts = np.unique(y, return_counts=True)
-        self.majority_class: np.int32 = classes[np.argmax(counts)]
+        self.majority_class_: np.int32 = classes[np.argmax(counts)]
         return self
 
     def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]:
         """Predict the majority class for all samples."""
-        return np.full(X.shape[0], self.majority_class, dtype=np.int32)
+        return np.full(X.shape[0], self.majority_class_, dtype=np.int32)
 
     def get_params(self, deep: bool = True) -> dict[str, object]:
         return {}
@@ -157,13 +157,13 @@ class Blind(BaseEstimator, Method):
 
     def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self:
         """Fit the model by storing the classes."""
-        self.classes = np.unique(y)
+        self.classes_ = np.unique(y)
         return self
 
     def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]:
         """Predict a random label for all samples."""
         random_state = reproducible_random_state(self.random_state)
-        return random_state.choice(self.classes, size=X.shape[0], replace=True).astype(
+        return random_state.choice(self.classes_, size=X.shape[0], replace=True).astype(
             np.int32
         )
 
