@@ -8,8 +8,7 @@ from fair_forge.datasets import GroupDataset
 from fair_forge.methods import GroupMethod, Method
 from fair_forge.metrics import GroupMetric, Metric
 from fair_forge.preprocessing import Preprocessor
-from fair_forge.split import basic_split, proportional_split
-from fair_forge.utils import reproducible_random_state
+from fair_forge.split import SplitMethod, basic_split, proportional_split
 
 __all__ = ["Split", "evaluate"]
 
@@ -27,7 +26,7 @@ def evaluate(
     *,
     preprocessor: Preprocessor | None = None,
     repeat: int = 1,
-    split: Split = Split.PROPORTIONAL,
+    split: Split | SplitMethod = Split.PROPORTIONAL,
     seed: int = 42,
     train_percentage: float = 0.8,
     remove_score_suffix: bool = True,
@@ -37,22 +36,18 @@ def evaluate(
 
     for repeat_index in range(repeat):
         split_seed = seed + repeat_index
-        generator = reproducible_random_state(split_seed)
+        split_method: SplitMethod
         match split:
             case Split.BASIC:
-                train_idx, test_idx = basic_split(
-                    generator,
-                    train_percentage,
-                    target=dataset.target,
-                    groups=dataset.groups,
-                )
+                split_method = basic_split
             case Split.PROPORTIONAL:
-                train_idx, test_idx = proportional_split(
-                    generator,
-                    train_percentage,
-                    target=dataset.target,
-                    groups=dataset.groups,
-                )
+                split_method = proportional_split
+            case _:
+                split_method = split
+        train_idx, test_idx = split_method(
+            split_seed, train_percentage, target=dataset.target, groups=dataset.groups
+        )
+
         train_x = dataset.data[train_idx]
         train_y = dataset.target[train_idx]
         train_groups = dataset.groups[train_idx]

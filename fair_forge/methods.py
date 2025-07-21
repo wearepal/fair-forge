@@ -1,4 +1,5 @@
 from dataclasses import asdict, dataclass
+from enum import Enum
 from typing import Any, Protocol, Self
 
 import numpy as np
@@ -10,6 +11,7 @@ from fair_forge.utils import reproducible_random_state
 
 __all__ = [
     "Blind",
+    "FairnessType",
     "GroupMethod",
     "Majority",
     "Method",
@@ -43,6 +45,15 @@ class GroupMethod(_MethodBase, Protocol):
     def fit(
         self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
     ) -> Self: ...
+
+
+class FairnessType(Enum):
+    DP = "dp"
+    """Demographic Parity (DP)"""
+    EQ_OPP = "eq_opp"
+    """Equal Opportunity (EQ_OPP)"""
+    EQ_ODDS = "eq_odds"
+    """Equalized Odds (EQ_ODDS)"""
 
 
 @dataclass

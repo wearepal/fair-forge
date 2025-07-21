@@ -16,6 +16,7 @@ __all__ = [
     "grouping_by_prefix",
     "load_adult",
     "load_dummy_dataset",
+    "load_ethicml_toy",
 ]
 
 
@@ -203,6 +204,33 @@ def load_dummy_dataset(seed: int) -> GroupDataset:
         target=y,
         groups=groups,
         name=name,
+        feature_grouping=feature_grouping,
+        feature_names=feature_names,
+    )
+
+
+def load_ethicml_toy(group_in_features: bool = False) -> GroupDataset:
+    """Load the EthicML toy dataset."""
+    base_path = Path(__file__).parent
+    df = pl.read_parquet(base_path / "data" / "toy.parquet")
+    y = df.get_column("decision").cast(pl.Int32).to_numpy()
+    df = df.drop("decision")
+    groups = df.get_column("sensitive-attr").cast(pl.Int32).to_numpy()
+    if not group_in_features:
+        # If the group is not supposed to be in the features, we drop it
+        df = df.drop("sensitive-attr")
+    discrete_columns = ["disc_1", "disc_2"]
+    df = df.to_dummies(discrete_columns, separator=":")
+    features = df.cast(pl.Float32).to_numpy()
+    feature_names = df.columns
+    feature_grouping = grouping_by_prefix(
+        columns=feature_names, prefixes=discrete_columns
+    )
+    return GroupDataset(
+        data=features,
+        target=y,
+        groups=groups,
+        name="Toy",
         feature_grouping=feature_grouping,
         feature_names=feature_names,
     )
