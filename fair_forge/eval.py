@@ -1,12 +1,12 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import NamedTuple, cast
+from typing import Any, cast
 
 import polars as pl
 
 from fair_forge.datasets import GroupDataset
 from fair_forge.methods import GroupMethod, Method
-from fair_forge.metrics import Float, GroupMetric, Metric
+from fair_forge.metrics import GroupMetric, Metric
 from fair_forge.preprocessing import Preprocessor
 from fair_forge.split import basic_split, proportional_split
 from fair_forge.utils import reproducible_random_state
@@ -19,15 +19,9 @@ class Split(Enum):
     PROPORTIONAL = "proportional"
 
 
-class Result(NamedTuple):
-    method_name: str
-    params: dict[str, object]
-    scores: pl.DataFrame
-
-
 def evaluate(
     dataset: GroupDataset,
-    methods: Sequence[Method | GroupMethod],
+    methods: Mapping[str, Method | GroupMethod],
     metrics: Sequence[Metric],
     group_metrics: Sequence[GroupMetric],
     *,
@@ -37,8 +31,9 @@ def evaluate(
     seed: int = 42,
     train_percentage: float = 0.8,
     remove_score_suffix: bool = True,
-) -> list[Result]:
-    result: list[list[tuple[str, dict[str, object], dict[str, Float]]]] = []
+    seed_methods: bool = True,
+) -> pl.DataFrame:
+    result: list[dict[str, Any]] = []
 
     for repeat_index in range(repeat):
         split_seed = seed + repeat_index
@@ -69,12 +64,15 @@ def evaluate(
             train_x = preprocessor.fit(train_x, train_y).transform(train_x)
             test_x = preprocessor.transform(test_x)
 
-        result_for_repeat: list[tuple[str, dict[str, object], dict[str, Float]]] = []
-        for method in methods:
-            method_name: str = method.__class__.__name__
-            scores: dict[str, Float] = {}
-            scores["repeat_index"] = repeat_index
-            scores["split_seed"] = split_seed
+        for method_name, method in methods.items():
+            row: dict[str, Any] = {}
+            row["method"] = method_name
+            row["repeat_index"] = repeat_index
+            row["split_seed"] = split_seed
+
+            if seed_methods and "random_state" in method.get_params():
+                # If the method has a `random_state` parameter, we set it.
+                method.set_params(random_state=split_seed)
 
             # If a method requests `groups` in its metadata, we cast it to GroupMethod.
             if "groups" in method.get_metadata_routing().fit.requests:
@@ -93,30 +91,24 @@ def evaluate(
                 if remove_score_suffix and metric_name.endswith("_score"):
                     metric_name = metric_name[:-6]
                 score = metric(y_true=test_y, y_pred=predictions)
-                scores[metric_name] = score
+                row[metric_name] = score
 
             for group_metric in group_metrics:
                 group_metric_name = group_metric.__name__
                 group_score = group_metric(
                     y_true=test_y, y_pred=predictions, groups=test_groups
                 )
-                scores[group_metric_name] = group_score
-            result_for_repeat.append((method_name, method.get_params(), scores))
-        result.append(result_for_repeat)
+                row[group_metric_name] = group_score
+            result.append(row)
 
-    # Convert the result dictionary to a Polars DataFrame
-    # We have to perform a kind of "transpose" operation here
-    names_and_params = [(i, entry[0], entry[1]) for i, entry in enumerate(result[0])]
-    r: list[Result] = []
-    for i, method_name, params in names_and_params:
-        df = pl.DataFrame(
-            [result[repeat_index][i][2] for repeat_index in range(repeat)]
-        )
-        r.append(
-            Result(
-                method_name=method_name,
-                params=params,
-                scores=df,
-            )
-        )
-    return r
+    # Convert the result list to a Polars DataFrame.
+    # We use `pl.Enum` to ensure the correct ordering of method names.
+    method_names = pl.Enum(list(methods))
+    return pl.DataFrame(
+        result,
+        schema_overrides={
+            "method": method_names,
+            "repeat_index": pl.Int64,
+            "split_seed": pl.Int64,
+        },
+    ).sort("method", "repeat_index")
