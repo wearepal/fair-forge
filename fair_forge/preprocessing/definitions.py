@@ -4,7 +4,7 @@ import numpy as np
 from numpy.typing import NDArray
 from sklearn.utils.metadata_routing import MetadataRequest
 
-__all__ = ["GroupDatasetModifier", "Preprocessor"]
+__all__ = ["GroupBasedTransform", "GroupDatasetModifier", "Preprocessor"]
 
 
 class _PreprocessorBase(Protocol):
@@ -23,6 +23,20 @@ class Preprocessor(_PreprocessorBase, Protocol):
     def transform(self, X: NDArray[np.float32]) -> NDArray[np.float32]:
         """Transform the data using the fitted preprocessor."""
         ...
+
+
+class GroupBasedTransform(_PreprocessorBase, Protocol):
+    """A transformation which is fitted with group information."""
+
+    def fit(
+        self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
+    ) -> Self: ...
+
+    def transform(self, X: NDArray[np.float32]) -> NDArray[np.float32]: ...
+
+    def fit_transform(
+        self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
+    ) -> NDArray[np.float32]: ...
 
 
 class GroupDatasetModifier(_PreprocessorBase, Protocol):
