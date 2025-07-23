@@ -1,37 +1,57 @@
 from dataclasses import dataclass
 from enum import Enum
 import itertools
-from typing import Self
+from typing import Any, Self
 
 import numpy as np
 from numpy.typing import NDArray
 from sklearn.base import BaseEstimator
 
-from fair_forge.methods import Method
+from fair_forge.methods import GroupMethod, Method
 from fair_forge.utils import reproducible_random_state
 
-from .definitions import GroupPreMethod
+from .definitions import GroupDatasetModifier
 
-__all__ = ["EstimatorForTransformedLabels", "UpsampleStrategy", "Upsampler"]
+__all__ = ["GroupPipeline", "UpsampleStrategy", "Upsampler"]
 
 
 @dataclass
-class EstimatorForTransformedLabels(BaseEstimator):
+class GroupPipeline(BaseEstimator, GroupMethod):
+    group_data_modifier: GroupDatasetModifier
     estimator: Method
+    random_state: int | None = None
+
+    def __post_init__(self) -> None:
+        self.update_random_state()
+
+    def update_random_state(self) -> None:
+        if self.random_state is not None:
+            self.group_data_modifier.set_params(random_state=self.random_state)
+            self.estimator.set_params(random_state=self.random_state)
 
     def fit(
-        self,
-        X: NDArray[np.float32],
-        y: NDArray[np.int32],
-        *,
-        targets: NDArray[np.int32],
+        self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
     ) -> Self:
-        self.estimator.fit(X, targets)
+        # Fit the group pre-processing method and transform the data
+        self.group_data_modifier.fit(X, y=y, groups=groups)
+        X_transformed = self.group_data_modifier.transform(X, is_train=True, is_x=True)
+        # Transform the labels
+        y_transformed = self.group_data_modifier.transform(y, is_train=True)
+
+        # Fit the estimator with the transformed data
+        self.estimator.fit(X_transformed, y=y_transformed)
         self.fitted_ = True
         return self
 
     def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]:
-        return self.estimator.predict(X)
+        # Transform the input data using the group pre-processing method
+        X_transformed = self.group_data_modifier.transform(X, is_train=False)
+        return self.estimator.predict(X_transformed)
+
+    def set_params(self, **params: Any) -> Self:
+        ret = super().set_params(**params)
+        self.update_random_state()
+        return ret
 
 
 class UpsampleStrategy(Enum):
@@ -43,19 +63,15 @@ class UpsampleStrategy(Enum):
 
 
 @dataclass
-class Upsampler(BaseEstimator, GroupPreMethod):
+class Upsampler(BaseEstimator, GroupDatasetModifier):
     strategy: UpsampleStrategy = UpsampleStrategy.UNIFORM
     random_state: int = 0
 
     def fit(
-        self,
-        X: NDArray[np.float32],
-        *,
-        targets: NDArray[np.int32],
-        groups: NDArray[np.int32],
+        self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
     ) -> Self:
         s_vals: NDArray[np.int32] = np.unique(groups)
-        y_vals: NDArray[np.int32] = np.unique(targets)
+        y_vals: NDArray[np.int32] = np.unique(y)
 
         segments: list[tuple[np.int32, np.int32]] = list(
             itertools.product(s_vals, y_vals)
@@ -63,8 +79,8 @@ class Upsampler(BaseEstimator, GroupPreMethod):
 
         data: list[tuple[NDArray[np.bool], np.int64, np.int64, np.int64]] = []
         for s_val, y_val in segments:
-            s_y_mask: NDArray[np.bool] = (groups == s_val) & (targets == y_val)
-            y_eq_y = np.count_nonzero(targets == y_val)
+            s_y_mask: NDArray[np.bool] = (groups == s_val) & (y == y_val)
+            y_eq_y = np.count_nonzero(y == y_val)
             s_eq_s = np.count_nonzero(groups == s_val)
             data.append((s_y_mask, np.count_nonzero(s_y_mask), y_eq_y, s_eq_s))
 
@@ -76,7 +92,7 @@ class Upsampler(BaseEstimator, GroupPreMethod):
             if self.strategy is UpsampleStrategy.NAIVE:
                 percentages.append((mask, (np.max(vals) / length).astype(np.float64)))
             else:
-                num_samples = len(targets)
+                num_samples = len(y)
                 num_batch = length
 
                 percentages.append(
@@ -91,13 +107,9 @@ class Upsampler(BaseEstimator, GroupPreMethod):
         return self
 
     def transform[S: np.generic](
-        self,
-        X: NDArray[S],
-        *,
-        targets: NDArray[np.int32] | None = None,
-        groups: NDArray[np.int32] | None = None,
+        self, X: NDArray[S], *, is_train: bool = False, is_x: bool = True
     ) -> NDArray[S]:
-        if targets is None or groups is None:
+        if not is_train:
             return X  # we're in test mode, no upsampling needed
         upsampled: list[NDArray[S]] = []
         generator = reproducible_random_state(self.random_state)
@@ -113,15 +125,3 @@ class Upsampler(BaseEstimator, GroupPreMethod):
             upsampled.append(X[mask][indices])
 
         return np.concatenate(upsampled, axis=0)
-
-    def fit_transform(
-        self,
-        X: NDArray[np.float32],
-        y: None,
-        *,
-        targets: NDArray[np.int32],
-        groups: NDArray[np.int32],
-    ) -> NDArray[np.float32]:
-        """Fit the upsampler and transform the data."""
-        self.fit(X, targets=targets, groups=groups)
-        return self.transform(X, targets=targets, groups=groups)

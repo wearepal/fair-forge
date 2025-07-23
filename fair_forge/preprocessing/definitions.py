@@ -1,16 +1,17 @@
-from typing import Protocol, Self
+from typing import Any, Protocol, Self
 
 import numpy as np
 from numpy.typing import NDArray
 from sklearn.utils.metadata_routing import MetadataRequest
 
-__all__ = ["GroupPreMethod", "Preprocessor"]
+__all__ = ["GroupDatasetModifier", "Preprocessor"]
 
 
 class _PreprocessorBase(Protocol):
     """A protocol for preprocessing methods."""
 
     def get_params(self, deep: bool = ...) -> dict[str, object]: ...
+    def set_params(self, **kwargs: Any) -> Self: ...
     def get_metadata_routing(self) -> MetadataRequest: ...
 
 
@@ -24,30 +25,15 @@ class Preprocessor(_PreprocessorBase, Protocol):
         ...
 
 
-class GroupPreMethod(_PreprocessorBase, Protocol):
+class GroupDatasetModifier(_PreprocessorBase, Protocol):
+    """A transformation which modifies both the dataset and the labels based on group information."""
+
     def fit(
-        self,
-        X: NDArray[np.float32],
-        *,
-        targets: NDArray[np.int32],
-        groups: NDArray[np.int32],
+        self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
     ) -> Self:
         """Fit the preprocessing method to the data with group information."""
         ...
 
     def transform[S: np.generic](
-        self,
-        X: NDArray[S],
-        *,
-        targets: NDArray[np.int32] | None = None,
-        groups: NDArray[np.int32] | None = None,
+        self, X: NDArray[S], *, is_train: bool = False, is_x: bool = False
     ) -> NDArray[S]: ...
-
-    def fit_transform(
-        self,
-        X: NDArray[np.float32],
-        y: None,
-        *,
-        targets: NDArray[np.int32],
-        groups: NDArray[np.int32],
-    ) -> NDArray[np.float32]: ...
