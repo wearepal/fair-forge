@@ -131,6 +131,8 @@ def _compute_instance_weights(
 class Majority(BaseEstimator, Method):
     """Simply returns the majority label from the train set."""
 
+    random_state: None = None
+
     def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self:
         """Fit the model by storing the majority class."""
         classes, counts = np.unique(y, return_counts=True)
