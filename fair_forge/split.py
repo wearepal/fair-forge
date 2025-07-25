@@ -1,14 +1,31 @@
 import itertools
+from typing import Protocol
 
 import numpy as np
-from numpy.random import Generator
 from numpy.typing import NDArray
 
-__all__ = ["basic_split", "proportional_split"]
+from fair_forge.utils import reproducible_random_state
+
+__all__ = ["SplitMethod", "basic_split", "proportional_split"]
+
+
+class SplitMethod(Protocol):
+    """Protocol for split methods."""
+
+    def __call__(
+        self,
+        seed: int,
+        train_percentage: float,
+        *,
+        target: NDArray[np.int32],
+        groups: NDArray[np.int32],
+    ) -> tuple[NDArray[np.int64], NDArray[np.int64]]:
+        """Generate the indices of the train and test splits."""
+        ...
 
 
 def basic_split(
-    generator: Generator,
+    seed: int,
     train_percentage: float,
     *,
     target: NDArray[np.int32],
@@ -18,6 +35,7 @@ def basic_split(
     length = len(target)
     train_size = round(length * train_percentage)
     indices = np.arange(length, dtype=np.int64)
+    generator = reproducible_random_state(seed)
     generator.shuffle(indices)
     train_indices = indices[:train_size]
     test_indices = indices[train_size:]
@@ -25,7 +43,7 @@ def basic_split(
 
 
 def proportional_split(
-    generator: Generator,
+    seed: int,
     train_percentage: float,
     *,
     target: NDArray[np.int32],
@@ -39,6 +57,7 @@ def proportional_split(
     train_indices: list[NDArray[np.int64]] = []
     test_indices: list[NDArray[np.int64]] = []
 
+    generator = reproducible_random_state(seed)
     # iterate over all combinations of s and y
     for s, y in itertools.product(s_vals, y_vals):
         # find all indices for this group

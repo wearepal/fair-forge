@@ -1,9 +1,13 @@
 """Transparently show how the UCI Adult dataset was generated from the raw download."""
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import polars as pl
 import polars.selectors as cs
+
+if TYPE_CHECKING:
+    from polars._typing import ColumnNameOrSelector, PolarsDataType
 
 
 def run_generate_adult() -> None:
@@ -51,7 +55,10 @@ def run_generate_adult() -> None:
 
     # Re-infer schema from the first 100 rows
     inferred_schema = pl.read_csv(all_data.head(100).write_csv().encode()).schema
-    all_data = all_data.cast(inferred_schema)  # type: ignore
+    schema_dict: dict[ColumnNameOrSelector | PolarsDataType, pl.DataType] = dict(
+        inferred_schema.items()
+    )
+    all_data = all_data.cast(schema_dict)
 
     # Replace full stop in the label of the test set
     all_data = all_data.with_columns(pl.col("salary").str.replace("<=50K.", "<=50K"))
@@ -66,7 +73,7 @@ def run_generate_adult() -> None:
     assert all_data.shape == (45_222, 15)
 
     # Save the parquet file
-    all_data.write_parquet(base_path / "src" / "fair_forge" / "data" / "adult.parquet")
+    all_data.write_parquet(base_path / "fair_forge" / "data" / "adult.parquet")
 
 
 if __name__ == "__main__":
