@@ -1,3 +1,5 @@
+"""Protocols and implementations of methods for fairness-aware machine learning."""
+
 from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, Protocol, Self

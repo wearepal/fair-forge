@@ -1,3 +1,5 @@
+"""Utility functions for Fair Forge."""
+
 from collections.abc import Generator
 
 import numpy as np

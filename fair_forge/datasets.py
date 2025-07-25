@@ -29,7 +29,7 @@ class Dataset(Protocol):
 class GroupDataset(NamedTuple):
     """A dataset containing features, labels, and groups.
 
-    Attributes:
+    Args:
         data: Features of the dataset.
         target: Labels of the dataset.
         groups: Groups of the dataset.
