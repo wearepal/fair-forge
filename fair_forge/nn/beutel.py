@@ -1,3 +1,5 @@
+"""A method for fair representations."""
+
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from itertools import islice

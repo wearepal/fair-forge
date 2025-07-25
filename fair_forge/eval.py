@@ -14,6 +14,8 @@ __all__ = ["Split", "evaluate"]
 
 
 class Split(Enum):
+    """Enum for different split methods used in evaluation."""
+
     BASIC = "basic"
     PROPORTIONAL = "proportional"
 
@@ -32,6 +34,7 @@ def evaluate(
     remove_score_suffix: bool = True,
     seed_methods: bool = True,
 ) -> pl.DataFrame:
+    """Evaluate methods on a dataset using specified metrics and group metrics."""
     result: list[dict[str, Any]] = []
 
     for repeat_index in range(repeat):

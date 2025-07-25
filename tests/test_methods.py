@@ -14,7 +14,9 @@ def test_reweighting():
     method = ff.Reweighting(lr)
     method.fit(X, y, groups=groups)
     predictions = method.predict(X)
-    np.testing.assert_allclose(predictions, np.array([0, 0, 1, 1, 1], dtype=np.int32))
+    np.testing.assert_array_equal(
+        predictions, np.array([0, 0, 1, 1, 1], dtype=np.int32)
+    )
 
 
 def test_majority():
@@ -24,7 +26,9 @@ def test_majority():
     method = ff.Majority()
     method.fit(X, y)
     predictions = method.predict(X)
-    np.testing.assert_allclose(predictions, np.array([0, 0, 0, 0, 0], dtype=np.int32))
+    np.testing.assert_array_equal(
+        predictions, np.array([0, 0, 0, 0, 0], dtype=np.int32)
+    )
 
 
 def test_blind():
@@ -34,7 +38,9 @@ def test_blind():
     method = ff.Blind(random_state=1)
     method.fit(X, y)
     predictions = method.predict(X)
-    np.testing.assert_allclose(predictions, np.array([0, 1, 1, 0, 1], dtype=np.int32))
+    np.testing.assert_array_equal(
+        predictions, np.array([0, 1, 1, 0, 1], dtype=np.int32)
+    )
     assert method.get_params() == {"random_state": 1}
     method.set_params(random_state=2)
     assert method.get_params() == {"random_state": 2}

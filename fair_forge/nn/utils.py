@@ -1,3 +1,5 @@
+"""Utility functions for neural networks in JAX."""
+
 from collections.abc import Generator
 
 import jax

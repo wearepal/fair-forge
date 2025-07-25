@@ -29,6 +29,10 @@ dev = [
     "pytest>=8.4.1",
     "ruff>=0.12.3",
 ]
+docs = [
+    "furo>=2025.7.19",
+    "sphinx>=8.2.3",
+]
 
 [tool.uv.sources]
 microsoft-python-type-stubs = { git = "https://github.com/tmke8/python-type-stubs.git", rev = "bc634ee" }
