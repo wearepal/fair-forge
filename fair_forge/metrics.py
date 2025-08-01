@@ -1,7 +1,8 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Hashable, Sequence
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
-from typing import Protocol, override
+from hashlib import sha1
+from typing import ClassVar, Protocol, override
 
 import numpy as np
 from numpy.typing import NDArray
@@ -183,11 +184,47 @@ def _confusion_matrix(
     return true_neg, false_pos, false_neg, true_pos
 
 
+class _HashableArray:
+    """A hashable wrapper for numpy arrays."""
+
+    def __init__(
+        self, array: NDArray[np.int32], *, unsafe_no_copy: bool = False
+    ) -> None:
+        if not unsafe_no_copy:
+            # We copy the array because numpy arrays are mutable
+            # and we cannot control their mutability outside this class.
+            self.__array = np.copy(array, order="C")
+        else:
+            self.__array = array
+
+    def __hash__(self) -> int:
+        return int(sha1(self.__array.view(np.uint8)).hexdigest(), 16)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, _HashableArray):
+            return np.array_equal(self.__array, other.__array)
+        return False
+
+    def unwrap(self) -> NDArray[np.int32]:
+        """Return the original numpy array.
+
+        This method returns a copy of the original array to ensure that
+        the original data is not modified outside of this class.
+        """
+        return self.__array.copy()
+
+
 @dataclass
 class _PerSensMetricBase(GroupMetric):
     metric: Metric
     agg_name: str
     remove_score_suffix: bool
+    score_cache: ClassVar[
+        dict[
+            tuple[Metric, _HashableArray, _HashableArray, _HashableArray],
+            NDArray[np.float64],
+        ]
+    ] = {}
 
     @property
     def __name__(self) -> str:
@@ -205,13 +242,39 @@ class _PerSensMetricBase(GroupMetric):
         groups: NDArray[np.int32],
         unique_groups: NDArray[np.int32],
     ) -> NDArray[np.float64]:
-        return np.array(
+        metric_is_hashable = isinstance(self.metric, Hashable)  # type: ignore
+        if metric_is_hashable:
+            # Check if the scores are already cached
+            # For the lookup, we use an unsafe no-copy version of the wrapper
+            lookup_key = (
+                self.metric,
+                _HashableArray(y_true, unsafe_no_copy=True),
+                _HashableArray(y_pred, unsafe_no_copy=True),
+                _HashableArray(groups, unsafe_no_copy=True),
+            )
+            if (group_scores := self.score_cache.get(lookup_key)) is not None:
+                # `group_scores` is a very small array, so we can safely copy it
+                return group_scores.copy()
+
+        # Compute the group scores
+        group_scores = np.array(
             [
                 self.metric(y_true[groups == group], y_pred[groups == group])
                 for group in unique_groups
             ],
             dtype=np.float64,
         )
+
+        if metric_is_hashable:
+            key = (
+                self.metric,
+                _HashableArray(y_true),
+                _HashableArray(y_pred),
+                _HashableArray(groups),
+            )
+            # `group_scores` is a very small array, so we can safely copy it
+            self.score_cache[key] = group_scores.copy()
+        return group_scores
 
 
 @dataclass
