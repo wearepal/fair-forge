@@ -28,6 +28,15 @@ def test_prob_pos():
     assert ff.prob_pos.__name__ == "prob_pos"
 
 
+def test_prob_pos_masked():
+    y_true = np.array([1, 0, 1, 0, 1], dtype=np.int32)
+    y_pred = np.array([1, 0, 1, 0, 0], dtype=np.int32)
+    mask = np.array([True, False, True, True, False], dtype=np.bool)
+    result = ff.prob_pos(y_true=y_true, y_pred=y_pred, sample_weight=mask)
+    np.testing.assert_allclose(result, 2 / 3)
+    assert ff.prob_pos.__name__ == "prob_pos"
+
+
 def test_prob_neg():
     y_true = np.array([1, 0, 1, 0, 1], dtype=np.int32)
     y_pred = np.array([1, 0, 1, 0, 0], dtype=np.int32)
