@@ -41,9 +41,9 @@ def test_per_sens_metrics():
     y_pred = np.array([1, 0, 1, 0, 0, 1], dtype=np.int32)
     groups = np.array([1, 1, 1, 0, 0, 0], dtype=np.int32)
 
-    metric_list = ff.per_sens_metrics(
+    metric_list = ff.as_group_metric(
         base_metrics=(accuracy_score, ff.prob_pos),
-        per_sens=ff.PerSens.ALL,
+        agg=ff.MetricAgg.ALL,
         remove_score_suffix=True,
     )
     assert len(metric_list) == 12

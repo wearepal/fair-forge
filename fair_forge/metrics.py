@@ -12,10 +12,10 @@ __all__ = [
     "Float",
     "GroupMetric",
     "Metric",
-    "PerSens",
+    "MetricAgg",
     "RenyiCorrelation",
+    "as_group_metric",
     "cv",
-    "per_sens_metrics",
     "prob_neg",
     "prob_pos",
     "tnr",
@@ -116,46 +116,32 @@ def _count_true(mask: np.ndarray) -> int:
     return np.count_nonzero(mask).item()
 
 
-def prob_pos(
-    y_true: NDArray[np.int32],
-    y_pred: NDArray[np.int32],
-) -> np.float64:
+def prob_pos(y_true: NDArray[np.int32], y_pred: NDArray[np.int32]) -> np.float64:
     """Probability of positive prediction."""
     _, f_pos, _, t_pos = _confusion_matrix(y_pred=y_pred, y_true=y_true)
     return ((t_pos + f_pos) / len(y_pred)).astype(np.float64)
 
 
-def prob_neg(
-    y_true: NDArray[np.int32],
-    y_pred: NDArray[np.int32],
-) -> np.float64:
+def prob_neg(y_true: NDArray[np.int32], y_pred: NDArray[np.int32]) -> np.float64:
     """Probability of negative prediction."""
     t_neg, _, f_neg, _ = _confusion_matrix(y_pred=y_pred, y_true=y_true)
     return ((t_neg + f_neg) / len(y_pred)).astype(np.float64)
 
 
-def tpr(
-    y_true: NDArray[np.int32],
-    y_pred: NDArray[np.int32],
-) -> np.float64:
+def tpr(y_true: NDArray[np.int32], y_pred: NDArray[np.int32]) -> np.float64:
     """True Positive Rate (TPR) or Sensitivity."""
     _, _, f_neg, t_pos = _confusion_matrix(y_pred=y_pred, y_true=y_true)
     return (t_pos / (t_pos + f_neg)).astype(np.float64)
 
 
-def tnr(
-    y_true: NDArray[np.int32],
-    y_pred: NDArray[np.int32],
-) -> np.float64:
+def tnr(y_true: NDArray[np.int32], y_pred: NDArray[np.int32]) -> np.float64:
     """True Negative Rate (TNR) or Specificity."""
     t_neg, f_pos, _, _ = _confusion_matrix(y_pred=y_pred, y_true=y_true)
     return (t_neg / (t_neg + f_pos)).astype(np.float64)
 
 
 def _confusion_matrix(
-    *,
-    y_true: NDArray[np.int32],
-    y_pred: NDArray[np.int32],
+    *, y_true: NDArray[np.int32], y_pred: NDArray[np.int32]
 ) -> tuple[np.int64, np.int64, np.int64, np.int64]:
     """Apply sci-kit learn's confusion matrix.
 
@@ -184,7 +170,7 @@ def _confusion_matrix(
 
 
 @dataclass
-class _PerSensMetricBase(GroupMetric):
+class _AggMetricBase(GroupMetric):
     metric: Metric
     agg_name: str
     remove_score_suffix: bool
@@ -215,7 +201,7 @@ class _PerSensMetricBase(GroupMetric):
 
 
 @dataclass
-class BinaryPerSensMetric(_PerSensMetricBase):
+class BinaryAggMetric(_AggMetricBase):
     aggregator: Callable[[np.float64, np.float64], np.float64]
 
     @override
@@ -229,7 +215,7 @@ class BinaryPerSensMetric(_PerSensMetricBase):
         """Compute the metric for the given predictions and actual values."""
         unique_groups = np.unique(groups)
         assert len(unique_groups) == 2, (
-            f"PerSensMetric with {self.agg_name} requires exactly two groups for aggregation"
+            f"Aggregation metric with {self.agg_name} requires exactly two groups for aggregation"
         )
         group_scores = self._group_scores(
             y_true=y_true, y_pred=y_pred, groups=groups, unique_groups=unique_groups
@@ -238,7 +224,7 @@ class BinaryPerSensMetric(_PerSensMetricBase):
 
 
 @dataclass
-class MulticlassPerSensMetric(_PerSensMetricBase):
+class MulticlassAggMetric(_AggMetricBase):
     aggregator: Callable[[NDArray[np.float64]], Float]
 
     @override
@@ -257,8 +243,8 @@ class MulticlassPerSensMetric(_PerSensMetricBase):
         return self.aggregator(group_scores)
 
 
-class PerSens(Flag):
-    """Aggregation methods for metrics that are computed per sensitive attributes."""
+class MetricAgg(Flag):
+    """Aggregation methods for metrics that are computed per group."""
 
     INDIVIDUAL = auto()
     """Individual per-group results."""
@@ -278,53 +264,53 @@ class PerSens(Flag):
     """All aggregations."""
 
 
-def per_sens_metrics(
+def as_group_metric(
     base_metrics: Sequence[Metric],
-    per_sens: PerSens = PerSens.DIFF_RATIO,
+    agg: MetricAgg = MetricAgg.DIFF_RATIO,
     remove_score_suffix: bool = True,
 ) -> list[GroupMetric]:
-    """Create per-sensitive attribute metrics from base metrics."""
+    """Turn a sequence of metrics into a list of group metrics."""
     metrics = []
     for metric in base_metrics:
-        if per_sens & PerSens.DIFF:
+        if agg & MetricAgg.DIFF:
             metrics.append(
-                BinaryPerSensMetric(
+                BinaryAggMetric(
                     metric=metric,
                     agg_name="diff",
                     remove_score_suffix=remove_score_suffix,
                     aggregator=lambda i, j: j - i,
                 )
             )
-        if per_sens & PerSens.RATIO:
+        if agg & MetricAgg.RATIO:
             metrics.append(
-                BinaryPerSensMetric(
+                BinaryAggMetric(
                     metric=metric,
                     agg_name="ratio",
                     remove_score_suffix=remove_score_suffix,
                     aggregator=lambda i, j: i / j if j != 0 else np.float64(np.nan),
                 )
             )
-        if per_sens & PerSens.MIN:
+        if agg & MetricAgg.MIN:
             metrics.append(
-                MulticlassPerSensMetric(
+                MulticlassAggMetric(
                     metric=metric,
                     agg_name="min",
                     remove_score_suffix=remove_score_suffix,
                     aggregator=np.min,
                 )
             )
-        if per_sens & PerSens.MAX:
+        if agg & MetricAgg.MAX:
             metrics.append(
-                MulticlassPerSensMetric(
+                MulticlassAggMetric(
                     metric=metric,
                     agg_name="max",
                     remove_score_suffix=remove_score_suffix,
                     aggregator=np.max,
                 )
             )
-        if per_sens & PerSens.INDIVIDUAL:
+        if agg & MetricAgg.INDIVIDUAL:
             metrics.append(
-                BinaryPerSensMetric(
+                BinaryAggMetric(
                     metric=metric,
                     agg_name="0",
                     remove_score_suffix=remove_score_suffix,
@@ -332,7 +318,7 @@ def per_sens_metrics(
                 )
             )
             metrics.append(
-                BinaryPerSensMetric(
+                BinaryAggMetric(
                     metric=metric,
                     agg_name="1",
                     remove_score_suffix=remove_score_suffix,
