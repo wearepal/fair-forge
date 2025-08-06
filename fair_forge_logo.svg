@@ -1,0 +1,47 @@
+<svg viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @font-face {
+        font-family: 'Verdana Bold Italic';
+        src: url("data:application/font-woff2;charset=utf-8;base64,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");
+      }
+    </style>
+  </defs>
+  <!-- Define styles -->
+  <style>
+    .red-fill {
+      fill: #DC2626;
+      stroke: #DC2626;
+      stroke-width: 2;
+    }
+    .red-fill-large {
+      fill: #DC2626;
+      stroke: #DC2626;
+      stroke-width: 2;
+      font-size: 58px;
+    }
+    .white-fill {
+      fill: white;
+      stroke: #DC2626;
+      stroke-width: 2;
+    }
+    .logo-text {
+      font-family: "Verdana Bold Italic", sans-serif;
+      font-size: 48px;
+      letter-spacing: 2px;
+    }
+  </style>
+  
+  <!-- White background -->
+  <rect width="320" height="80" fill="white"/>
+  
+  <!-- "fair" text -->
+  <text x="20" y="60" class="logo-text">
+    <tspan class="red-fill-large">f</tspan><tspan class="white-fill">air</tspan>
+  </text>
+  
+  <!-- "forge" text -->
+  <text x="140" y="60" class="logo-text">
+    <tspan class="red-fill-large">f</tspan><tspan class="white-fill">orge</tspan>
+  </text>
+</svg>
