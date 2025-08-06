@@ -39,6 +39,11 @@ intersphinx_mapping = {
     "numpy": ("http://docs.scipy.org/doc/numpy", None),
 }
 
+autodoc_default_options = {
+    # "members": True,
+    # "special-members": "__call__",
+}
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 

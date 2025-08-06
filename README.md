@@ -1,1 +1,1 @@
-![logo](./fair_forge_logo.svg)
+![logo](./docs/source/_static/fair_forge_logo.svg)
