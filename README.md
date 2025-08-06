@@ -1,1 +1,1 @@
-# fair-forge
+![logo](./fair_forge_logo.svg)
