@@ -1,6 +1,6 @@
 [project]
 name = "fair-forge"
-version = "0.2.0.dev0"
+version = "0.3.0.dev0"
 description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "Thomas M Kehrenberg", email = "tmke8@posteo.net" }]
