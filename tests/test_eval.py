@@ -11,8 +11,8 @@ def test_pipeline_with_dummy():
     ds = ff.load_dummy_dataset(seed=42)
     lr = LogisticRegression(random_state=42, max_iter=10)
     blind = ff.Blind(random_state=42)
-    group_metrics = ff.per_sens_metrics(
-        [ff.prob_pos], per_sens=ff.PerSens.MIN_MAX, remove_score_suffix=True
+    group_metrics = ff.as_group_metric(
+        [ff.prob_pos], agg=ff.MetricAgg.MIN_MAX, remove_score_suffix=True
     )
     metrics = [accuracy_score]
 
