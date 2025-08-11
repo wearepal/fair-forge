@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 
 import fair_forge as ff
+from fair_forge.metrics import _PerSensMetricBase  # pyright: ignore
 
 
 def test_renyi():
@@ -56,6 +57,8 @@ def test_per_sens_metrics():
         remove_score_suffix=True,
     )
     assert len(metric_list) == 12
+
+    assert len(_PerSensMetricBase.score_cache) == 0
 
     metric = metric_list[0]
     assert metric.__name__ == "accuracy_diff"
@@ -116,3 +119,5 @@ def test_per_sens_metrics():
     assert metric.__name__ == "prob_pos_1"
     result = metric(y_true=y_true, y_pred=y_pred, groups=groups)
     np.testing.assert_allclose(result, 2 / 3)
+
+    assert len(_PerSensMetricBase.score_cache) == 2
