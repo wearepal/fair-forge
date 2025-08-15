@@ -33,6 +33,9 @@ docs = [
     "furo>=2025.7.19",
     "sphinx>=8.2.3",
 ]
+notebook = [
+    "jupyterlab>=4.4.5",
+]
 
 [tool.uv.sources]
 microsoft-python-type-stubs = { git = "https://github.com/tmke8/python-type-stubs.git", rev = "bc634ee" }
