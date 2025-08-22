@@ -1,16 +1,18 @@
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from enum import Enum, Flag, auto
-from typing import Protocol, override
+from enum import Flag, auto
+from typing import Literal, Protocol, override
 
 import numpy as np
 from numpy.typing import NDArray
 from sklearn.metrics import confusion_matrix
 
+from ._metrics_common import renyi_correlation
+
 __all__ = [
-    "DependencyTarget",
     "Float",
     "GroupMetric",
+    "LabelType",
     "Metric",
     "MetricAgg",
     "RenyiCorrelation",
@@ -55,11 +57,7 @@ class GroupMetric(Protocol):
     ) -> Float: ...
 
 
-class DependencyTarget(Enum):
-    """The variable that is compared to the predictions in order to check how similar they are."""
-
-    S = "s"
-    Y = "y"
+type LabelType = Literal["group", "y"]
 
 
 @dataclass
@@ -70,12 +68,12 @@ class RenyiCorrelation(GroupMetric):
     titled "On Measures of Dependence" by Alfréd Rényi.
     """
 
-    base: DependencyTarget = DependencyTarget.S
+    base: LabelType = "group"
 
     @property
     def __name__(self) -> str:
         """The name of the metric."""
-        return f"renyi_{self.base.value}"
+        return f"renyi_{self.base}"
 
     @override
     def __call__(
@@ -85,34 +83,7 @@ class RenyiCorrelation(GroupMetric):
         *,
         groups: NDArray[np.int32],
     ) -> float:
-        base_values = y_true if self.base is DependencyTarget.Y else groups
-        x: NDArray[np.int32] = base_values.ravel()
-        y: NDArray[np.int32] = y_pred.ravel()
-        x_vals = np.unique(x)
-        y_vals = np.unique(y)
-        if len(x_vals) < 2 or len(y_vals) < 2:
-            return 1.0
-
-        total = len(x)
-        assert total == len(y)
-
-        joint = np.empty((len(x_vals), len(y_vals)))
-
-        for i, x_val in enumerate(x_vals):
-            for k, y_val in enumerate(y_vals):
-                # count how often x_val and y_val co-occur
-                joint[i, k] = (
-                    np.count_nonzero((x == x_val) & (y == y_val)).item() / total
-                )
-
-        marginal_rows = np.sum(joint, axis=0, keepdims=True)
-        marginal_cols = np.sum(joint, axis=1, keepdims=True)
-        q_matrix = joint / np.sqrt(marginal_rows) / np.sqrt(marginal_cols)
-        # singular value decomposition of Q
-        singulars = np.linalg.svd(q_matrix, compute_uv=False)
-
-        # return second-largest singular value
-        return singulars[1]
+        return renyi_correlation(x=y_true if self.base == "y" else groups, y=y_pred)
 
 
 def prob_pos(
@@ -312,7 +283,7 @@ def as_group_metric(
     """Turn a sequence of metrics into a list of group metrics."""
     metrics = []
     for metric in base_metrics:
-        if agg & MetricAgg.DIFF:
+        if MetricAgg.DIFF in agg:
             metrics.append(
                 _BinaryAggMetric(
                     metric=metric,
@@ -321,7 +292,7 @@ def as_group_metric(
                     aggregator=lambda i, j: j - i,
                 )
             )
-        if agg & MetricAgg.RATIO:
+        if MetricAgg.RATIO in agg:
             metrics.append(
                 _BinaryAggMetric(
                     metric=metric,
@@ -330,7 +301,7 @@ def as_group_metric(
                     aggregator=lambda i, j: i / j if j != 0 else np.float64(np.nan),
                 )
             )
-        if agg & MetricAgg.MIN:
+        if MetricAgg.MIN in agg:
             metrics.append(
                 _MulticlassAggMetric(
                     metric=metric,
@@ -339,7 +310,7 @@ def as_group_metric(
                     aggregator=np.min,
                 )
             )
-        if agg & MetricAgg.MAX:
+        if MetricAgg.MAX in agg:
             metrics.append(
                 _MulticlassAggMetric(
                     metric=metric,
@@ -348,7 +319,7 @@ def as_group_metric(
                     aggregator=np.max,
                 )
             )
-        if agg & MetricAgg.INDIVIDUAL:
+        if MetricAgg.INDIVIDUAL in agg:
             metrics.append(
                 _BinaryAggMetric(
                     metric=metric,

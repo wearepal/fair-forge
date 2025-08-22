@@ -22,7 +22,7 @@ def test_pipeline_with_dummy():
         metrics=metrics,
         group_metrics=group_metrics,
         repeat=2,
-        split=ff.Split.BASIC,
+        split="basic",
         seed=42,
         train_percentage=0.8,
         remove_score_suffix=True,

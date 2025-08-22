@@ -1,8 +1,7 @@
 """Protocols and implementations of methods for fairness-aware machine learning."""
 
 from dataclasses import asdict, dataclass
-from enum import Enum
-from typing import Any, Protocol, Self
+from typing import Any, Literal, Protocol, Self
 
 import numpy as np
 from numpy.typing import NDArray
@@ -49,13 +48,7 @@ class GroupMethod(_MethodBase, Protocol):
     ) -> Self: ...
 
 
-class FairnessType(Enum):
-    DP = "dp"
-    """Demographic Parity (DP)"""
-    EQ_OPP = "eq_opp"
-    """Equal Opportunity (EQ_OPP)"""
-    EQ_ODDS = "eq_odds"
-    """Equalized Odds (EQ_ODDS)"""
+type FairnessType = Literal["dp", "eq_opp", "eq_odds"]
 
 
 @dataclass

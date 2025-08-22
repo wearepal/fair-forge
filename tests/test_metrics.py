@@ -9,15 +9,15 @@ def test_renyi():
     y_pred = np.array([1, 0, 1, 0, 0, 1], dtype=np.int32)
     groups = np.array([1, 0, 1, 0, 0, 1], dtype=np.int32)
 
-    renyi_y = ff.RenyiCorrelation(ff.DependencyTarget.Y)
+    renyi_y = ff.RenyiCorrelation("y")
     result = renyi_y(y_true=y_true, y_pred=y_pred, groups=groups)
     np.testing.assert_allclose(result, 1 / 3)
     assert renyi_y.__name__ == "renyi_y"
 
-    renyi_s = ff.RenyiCorrelation(ff.DependencyTarget.S)
+    renyi_s = ff.RenyiCorrelation("group")
     result = renyi_s(y_true=y_true, y_pred=y_pred, groups=groups)
     np.testing.assert_allclose(result, 1.0)
-    assert renyi_s.__name__ == "renyi_s"
+    assert renyi_s.__name__ == "renyi_group"
 
 
 def test_prob_pos():

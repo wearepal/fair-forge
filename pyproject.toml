@@ -28,6 +28,7 @@ dev = [
     "microsoft-python-type-stubs",
     "pytest>=8.4.1",
     "ruff>=0.12.3",
+    "scipy-stubs>=1.16.1.1",
 ]
 docs = [
     "furo>=2025.7.19",

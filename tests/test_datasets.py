@@ -5,7 +5,7 @@ import fair_forge as ff
 
 def test_adult_gender():
     data = ff.load_adult(
-        group=ff.AdultGroup.SEX,
+        group="Sex",
         group_in_features=False,
         binarize_nationality=False,
         binarize_race=False,
@@ -32,7 +32,7 @@ def test_adult_gender():
 
 def test_adult_race():
     data = ff.load_adult(
-        group=ff.AdultGroup.RACE,
+        group="Race",
         group_in_features=False,
         binarize_nationality=False,
         binarize_race=False,
@@ -56,7 +56,7 @@ def test_adult_race():
 
 def test_adult_race_binary():
     data = ff.load_adult(
-        group=ff.AdultGroup.RACE,
+        group="Race",
         group_in_features=False,
         binarize_nationality=True,
         binarize_race=True,
@@ -80,7 +80,7 @@ def test_adult_race_binary():
 
 def test_adult_gender_in_features():
     data = ff.load_adult(
-        group=ff.AdultGroup.SEX,
+        group="Sex",
         group_in_features=True,
         binarize_nationality=True,
         binarize_race=False,

@@ -9,7 +9,7 @@ def test_upsampler():
     y = np.array([0, 0, 1, 1, 1], dtype=np.int32)
     groups = np.array([0, 1, 0, 1, 1], dtype=np.int32)
     lr = LogisticRegression(random_state=41, max_iter=10)
-    upsampler = ff.Upsampler(strategy=ff.UpsampleStrategy.NAIVE, random_state=41)
+    upsampler = ff.Upsampler(strategy="naive", random_state=41)
     pipeline = ff.GroupPipeline(group_data_modifier=upsampler, estimator=lr)
     pipeline.set_params(random_state=42)
     assert pipeline.get_params()["estimator__random_state"] == 42

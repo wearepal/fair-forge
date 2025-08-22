@@ -17,6 +17,7 @@ Reweighting(base_method=LogisticRegression(max_iter=10, random_state=42))
 array([0, 0, 1, 1, 1], dtype=int32)
 """
 
+from .data_metrics import *
 from .datasets import *
 from .eval import *
 from .methods import *
