@@ -1,7 +1,7 @@
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from enum import Enum, Flag, auto
-from typing import Protocol, override
+from enum import Flag, auto
+from typing import Literal, Protocol, override
 
 import numpy as np
 from numpy.typing import NDArray
@@ -57,11 +57,7 @@ class GroupMetric(Protocol):
     ) -> Float: ...
 
 
-class LabelType(Enum):
-    """The variable that is compared to the predictions in order to check how similar they are."""
-
-    S = "s"
-    Y = "y"
+type LabelType = Literal["group", "y"]
 
 
 @dataclass
@@ -72,12 +68,12 @@ class RenyiCorrelation(GroupMetric):
     titled "On Measures of Dependence" by Alfréd Rényi.
     """
 
-    base: LabelType = LabelType.S
+    base: LabelType = "group"
 
     @property
     def __name__(self) -> str:
         """The name of the metric."""
-        return f"renyi_{self.base.value}"
+        return f"renyi_{self.base}"
 
     @override
     def __call__(
@@ -287,7 +283,7 @@ def as_group_metric(
     """Turn a sequence of metrics into a list of group metrics."""
     metrics = []
     for metric in base_metrics:
-        if agg & MetricAgg.DIFF:
+        if MetricAgg.DIFF in agg:
             metrics.append(
                 _BinaryAggMetric(
                     metric=metric,
@@ -296,7 +292,7 @@ def as_group_metric(
                     aggregator=lambda i, j: j - i,
                 )
             )
-        if agg & MetricAgg.RATIO:
+        if MetricAgg.RATIO in agg:
             metrics.append(
                 _BinaryAggMetric(
                     metric=metric,
@@ -305,7 +301,7 @@ def as_group_metric(
                     aggregator=lambda i, j: i / j if j != 0 else np.float64(np.nan),
                 )
             )
-        if agg & MetricAgg.MIN:
+        if MetricAgg.MIN in agg:
             metrics.append(
                 _MulticlassAggMetric(
                     metric=metric,
@@ -314,7 +310,7 @@ def as_group_metric(
                     aggregator=np.min,
                 )
             )
-        if agg & MetricAgg.MAX:
+        if MetricAgg.MAX in agg:
             metrics.append(
                 _MulticlassAggMetric(
                     metric=metric,
@@ -323,7 +319,7 @@ def as_group_metric(
                     aggregator=np.max,
                 )
             )
-        if agg & MetricAgg.INDIVIDUAL:
+        if MetricAgg.INDIVIDUAL in agg:
             metrics.append(
                 _BinaryAggMetric(
                     metric=metric,

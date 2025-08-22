@@ -1,6 +1,5 @@
-from enum import Enum
 from pathlib import Path
-from typing import NamedTuple, Protocol
+from typing import Literal, NamedTuple, Protocol
 
 import numpy as np
 from numpy.typing import NDArray
@@ -46,9 +45,7 @@ class GroupDataset(NamedTuple):
     feature_names: list[str]
 
 
-class AdultGroup(Enum):
-    SEX = "Sex"
-    RACE = "Race"
+type AdultGroup = Literal["Sex", "Race"]
 
 
 def load_adult(
@@ -66,7 +63,7 @@ def load_adult(
     Returns:
         A Dataset object containing the Adult dataset.
     """
-    name = f"Adult {group.value}"
+    name = f"Adult {group}"
     if binarize_nationality:
         name += ", binary nationality"
     if binarize_race:
@@ -116,16 +113,18 @@ def load_adult(
     groups: NDArray[np.int32]
     to_drop: str
     match group:
-        case AdultGroup.SEX:
+        case "Sex":
             groups = (
                 df.get_column("sex").cat.starts_with("Male").cast(pl.Int32).to_numpy()
             )
             to_drop = "sex"
-        case AdultGroup.RACE:
+        case "Race":
             # `.to_physical()` converts the categorical column to its physical representation,
             # which is UInt32 by default in Polars.
             groups = df.get_column("race").to_physical().cast(pl.Int32).to_numpy()
             to_drop = "race"
+        case _:
+            raise ValueError(f"Invalid group: {group}")
     if not group_in_features:
         df = df.drop(to_drop)
         column_grouping_prefixes.remove(to_drop)

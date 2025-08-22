@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from enum import Enum
 import itertools
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 import numpy as np
 from numpy.typing import NDArray
@@ -54,17 +53,12 @@ class GroupPipeline(BaseEstimator, GroupMethod):
         return ret
 
 
-class UpsampleStrategy(Enum):
-    """Strategy for upsampling."""
-
-    UNIFORM = "uniform"
-    # PREFERENTIAL = "preferential"
-    NAIVE = "naive"
+type UpsampleStrategy = Literal["uniform", "naive"]  # , "preferential"]
 
 
 @dataclass
 class Upsampler(BaseEstimator, GroupDatasetModifier):
-    strategy: UpsampleStrategy = UpsampleStrategy.UNIFORM
+    strategy: UpsampleStrategy = "uniform"
     random_state: int = 0
 
     def fit(
@@ -89,7 +83,7 @@ class Upsampler(BaseEstimator, GroupDatasetModifier):
         vals = list([d[1] for d in data])
 
         for mask, length, y_eq_y, s_eq_s in data:
-            if self.strategy is UpsampleStrategy.NAIVE:
+            if self.strategy == "naive":
                 percentages.append((mask, (np.max(vals) / length).astype(np.float64)))
             else:
                 num_samples = len(y)

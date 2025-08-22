@@ -1,6 +1,5 @@
 from collections.abc import Mapping, Sequence
-from enum import Enum
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import polars as pl
 
@@ -12,12 +11,7 @@ from fair_forge.split import SplitMethod, basic_split, proportional_split
 
 __all__ = ["Split", "evaluate"]
 
-
-class Split(Enum):
-    """Enum for different split methods used in evaluation."""
-
-    BASIC = "basic"
-    PROPORTIONAL = "proportional"
+type Split = Literal["basic", "proportional"] | SplitMethod
 
 
 def evaluate(
@@ -28,7 +22,7 @@ def evaluate(
     *,
     preprocessor: Preprocessor | None = None,
     repeat: int = 1,
-    split: Split | SplitMethod = Split.PROPORTIONAL,
+    split: Split = "proportional",
     seed: int = 42,
     train_percentage: float = 0.8,
     remove_score_suffix: bool = True,
@@ -41,10 +35,15 @@ def evaluate(
         split_seed = seed + repeat_index
         split_method: SplitMethod
         match split:
-            case Split.BASIC:
+            case "basic":
                 split_method = basic_split
-            case Split.PROPORTIONAL:
+            case "proportional":
                 split_method = proportional_split
+            case str() as split_method:
+                raise ValueError(
+                    f"Invalid split method: {split_method}. "
+                    "Use 'basic', 'proportional', or a custom SplitMethod instance."
+                )
             case _:
                 split_method = split
         train_idx, test_idx = split_method(

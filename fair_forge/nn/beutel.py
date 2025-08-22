@@ -154,7 +154,7 @@ class Beutel(BaseEstimator, GroupBasedTransform):
     adv_size: list[int] = field(default_factory=lambda: [40])
     pred_size: list[int] = field(default_factory=lambda: [40])
     adv_weight: float = 1.0
-    fairness: FairnessType = FairnessType.DP
+    fairness: FairnessType = "dp"
     batch_size: int = 64
     iters: int = 500
     random_state: int = 42
@@ -182,12 +182,14 @@ class Beutel(BaseEstimator, GroupBasedTransform):
                 ).mean()
 
             match self.fairness:
-                case FairnessType.EQ_OPP:
+                case "eq_opp":
                     mask = y > 0.5
-                case FairnessType.EQ_ODDS:
+                case "eq_odds":
                     raise NotImplementedError("Not implemented Eq. Odds yet")
-                case FairnessType.DP:
+                case "dp":
                     mask = jnp.ones(s.shape, dtype=jnp.bool)
+                case _:
+                    raise ValueError("Invalid fairness value")
             if s_size > 1:
                 adversary_loss = optax.softmax_cross_entropy_with_integer_labels(
                     logits=s_hat, labels=s, where=mask
