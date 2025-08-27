@@ -5,6 +5,8 @@
 
 .. automodule:: fair_forge
 
+.. turn off members here somehow
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents

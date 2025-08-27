@@ -3,7 +3,6 @@ Main API
 
 .. autosummary::
    :toctree: generated
-   :recursive:
 
    fair_forge.datasets
    fair_forge.data_metrics

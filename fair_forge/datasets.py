@@ -26,23 +26,20 @@ class Dataset(Protocol):
 
 
 class GroupDataset(NamedTuple):
-    """A dataset containing features, labels, and groups.
-
-    Args:
-        data: Features of the dataset.
-        target: Labels of the dataset.
-        groups: Groups of the dataset.
-        name: Name of the dataset.
-        feature_grouping: Slices indicating groups of features.
-        feature_names: Names of the features in the dataset.
-    """
+    """A dataset containing features, labels, and groups."""
 
     data: NDArray[np.float32]
+    """Features of the dataset."""
     target: NDArray[np.int32]
+    """Labels of the dataset."""
     groups: NDArray[np.int32]
+    """Groups of the dataset."""
     name: str
+    """Name of the dataset."""
     feature_grouping: list[slice]
+    """Slices indicating groups of features."""
     feature_names: list[str]
+    """Names of the features in the dataset."""
 
 
 type AdultGroup = Literal["Sex", "Race"]

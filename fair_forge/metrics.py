@@ -69,6 +69,7 @@ class RenyiCorrelation(GroupMetric):
     """
 
     base: LabelType = "group"
+    """Which label to use as base to compute the correlation against."""
 
     @property
     def __name__(self) -> str:
