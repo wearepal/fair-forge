@@ -62,25 +62,59 @@ class DistanceFromUniform(DataMetric):
         return f"{self.label}_distance_from_uniform"
 
     def __call__(self, y: NDArray[np.int32], groups: NDArray[np.int32]) -> np.float64:
-        match self.label:
-            case "y":
-                # Ensure the labels are non-negative and contiguous
-                uniques, labels = np.unique(y, return_inverse=True)
-                num_label_values = len(uniques)
-            case "group":
-                uniques, labels = np.unique(groups, return_inverse=True)
-                num_label_values = len(uniques)
-            case "combination":
-                y_values, y_contiguous = np.unique(y, return_inverse=True)
-                num_classes = len(y_values)
-                group_values, groups_contiguous = np.unique(groups, return_inverse=True)
-                num_groups = len(group_values)
-                labels = y_contiguous * num_groups + groups_contiguous
-                num_label_values = num_classes * num_groups
-
-        # Calculate the proportions of each label
-        proportions = np.bincount(labels, minlength=num_label_values) / len(labels)
+        proportions, _ = _proportions(self.label, y, groups)
         return np.log(len(proportions)) - entropy(proportions)
+
+
+def _proportions(
+    label: LabelType | Literal["combination"],
+    y: NDArray[np.int32],
+    groups: NDArray[np.int32],
+) -> tuple[NDArray[np.float64], NDArray[np.int32]]:
+    """Calculate the proportions of each label value.
+
+    This function returns two arrays:
+
+    The first array contains the proportions of each label value in the data. The array
+    is sorted by the label values, i.e., the first element corresponds to the smallest
+    label value, the second element to the second smallest label value, etc.
+
+    The second array contains the original label values, sorted in the same way the
+    first array is sorted.
+
+    Example:
+
+        >>> y = np.array([2, -1, 2, 2, -1, -1, 2, 2], dtype=np.int32)
+        >>> groups = np.zeros_like(y, dtype=np.int32)
+        >>> _proportions("y", y, groups)
+        (array([0.375, 0.625]), array([-1,  2], dtype=int32))
+    """
+    contiguous_labels: NDArray[np.int64]
+    index_to_label_map: NDArray[np.int32]
+    match label:
+        case "y":
+            # Ensure the labels are non-negative and contiguous
+            index_to_label_map, contiguous_labels = np.unique(y, return_inverse=True)
+        case "group":
+            index_to_label_map, contiguous_labels = np.unique(
+                groups, return_inverse=True
+            )
+        case "combination":
+            y_values, y_contiguous = np.unique(y, return_inverse=True)
+            num_classes = len(y_values)
+            group_values, groups_contiguous = np.unique(groups, return_inverse=True)
+            num_groups = len(group_values)
+            contiguous_labels = y_contiguous * num_groups + groups_contiguous
+            num_label_values = num_classes * num_groups
+            # TODO: find a better way to create a label value mapping here
+            index_to_label_map = np.arange(num_label_values, dtype=np.int32)
+
+    # Calculate the proportions of each label
+    return (
+        np.bincount(contiguous_labels, minlength=len(index_to_label_map))
+        / len(contiguous_labels),
+        index_to_label_map,
+    )
 
 
 type BinaryAggregation = Literal["diff", "ratio"]
@@ -88,7 +122,7 @@ type BinaryAggregation = Literal["diff", "ratio"]
 
 @dataclass
 class LabelImbalance(DataMetric):
-    """Calculate the binary label imbalance as the difference between the proportions of the two classes.
+    """Calculate the imbalance in the class labels or the group labels.
 
     The imbalance can be expressed as either a difference or a ratio. In the case of
     the difference, positive values indicate an imbalance favoring the positive
@@ -134,28 +168,23 @@ class LabelImbalance(DataMetric):
         return f"{self.label}_imbalance_{self.agg}"
 
     def __call__(self, y: NDArray[np.int32], groups: NDArray[np.int32]) -> np.float64:
-        a = y if self.label == "y" else groups
-        label_values, labels = np.unique(a, return_inverse=True)
-        label_value_0: np.int32
-        label_value_1: np.int32
-        if len(label_values) > 2:
+        proportions, _ = _proportions(self.label, y, groups)
+        if len(proportions) > 2:
             # If there are more than two label values, we use the most common and
             # the least common label values instead.
-            sorted_indices = np.bincount(labels).argsort()
-            max_index: np.int64 = sorted_indices[-1]
-            min_index: np.int64 = sorted_indices[0]
-            label_value_0 = label_values[min_index]
-            label_value_1 = label_values[max_index]
-        elif len(label_values) == 2:
-            label_value_0, label_value_1 = label_values.tolist()
+            sorted_proportions = np.sort(proportions)
+            proportion_0 = sorted_proportions[0]
+            proportion_1 = sorted_proportions[-1]
+        elif len(proportions) == 2:
+            # The way the `proportions` array is sorted, the first element corresponds
+            # to the smallest label value. We assume that the smallest label value is
+            # the negative label and the largest label value is the positive.
+            proportion_0, proportion_1 = proportions[0], proportions[1]
         else:
-            label_value_1 = label_values[0]
-            # If there is only one label value, give the other label value as 0 or 1
-            # depending on the value of the first label value.
-            label_value_0 = np.int32(0) if label_value_1 != 0 else np.int32(1)
-
-        proportion_0 = np.float64(np.count_nonzero(a == label_value_0) / len(a))
-        proportion_1 = np.float64(np.count_nonzero(a == label_value_1) / len(a))
+            proportion_1 = proportions[0]
+            # If there is only one label value, we pretend that the other label values
+            # have a proportion of 0.
+            proportion_0 = np.float64(0)
         match self.agg:
             case "diff":
                 return proportion_1 - proportion_0
