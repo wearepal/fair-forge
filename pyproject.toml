@@ -1,7 +1,7 @@
 [project]
 name = "fair-forge"
-version = "0.4.0.dev0"
-description = "Add your description here"
+version = "0.4.0"
+description = "A toolkit for developing group-aware ML methods"
 readme = "README.md"
 authors = [{ name = "Thomas M Kehrenberg", email = "tmke8@posteo.net" }]
 requires-python = ">=3.12"
