@@ -28,6 +28,7 @@ extensions = [
 
 # templates_path = ["_templates"]
 exclude_patterns = []
+autosummary_generate = True  # let autosummary generate stubs
 autosummary_imported_members = True  # include imports in the summary...
 autosummary_ignore_module_all = False  # ...but if `__all__` is set, respect it
 # We cannot set the following because the numpy docs imported through intersphinx
@@ -49,6 +50,7 @@ autodoc_default_options = {
     "imported-members": True,
     # We want to show the documentation for `__call__`.
     "special-members": "__call__",
+    "show-inheritance": True,
 }
 
 # -- Options for HTML output -------------------------------------------------

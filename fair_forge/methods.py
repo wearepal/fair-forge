@@ -22,14 +22,19 @@ __all__ = [
 
 
 class _MethodBase(Protocol):
-    def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]: ...
+    def predict(self, X: NDArray[np.float32]) -> NDArray[np.int32]:
+        """Predict the labels for the given data."""
+        ...
+
     def get_params(self, deep: bool = ...) -> dict[str, object]: ...
     def set_params(self, **kwargs: Any) -> Self: ...
     def get_metadata_routing(self) -> MetadataRequest: ...
 
 
 class Method(_MethodBase, Protocol):
-    def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self: ...
+    def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self:
+        """Fit the model to the data."""
+        ...
 
 
 class SampleWeightMethod(_MethodBase, Protocol):
@@ -39,13 +44,17 @@ class SampleWeightMethod(_MethodBase, Protocol):
         y: NDArray[np.int32],
         *,
         sample_weight: NDArray[np.float64],
-    ) -> Self: ...
+    ) -> Self:
+        """Fit the model to the data, taking sample weights into account."""
+        ...
 
 
 class GroupMethod(_MethodBase, Protocol):
     def fit(
         self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
-    ) -> Self: ...
+    ) -> Self:
+        """Fit the model to the data, taking group information into account."""
+        ...
 
 
 type FairnessType = Literal["dp", "eq_opp", "eq_odds"]
@@ -53,14 +62,12 @@ type FairnessType = Literal["dp", "eq_opp", "eq_odds"]
 
 @dataclass
 class Reweighting(BaseEstimator, GroupMethod):
-    """An implementation of the Reweighing method from Kamiran&Calders, 2012.
-
-    Args:
-        base_method: The method to use for fitting and predicting. It should implement the
-            SampleWeightMethod protocol.
-    """
+    """An implementation of the Reweighing method from Kamiran&Calders, 2012."""
 
     base_method: SampleWeightMethod
+    """The method to use for fitting and predicting.
+
+    It should implement the SampleWeightMethod protocol."""
 
     def fit(
         self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
@@ -162,6 +169,7 @@ class Blind(BaseEstimator, Method):
     """
 
     random_state: int = 0
+    """Random seed for reproducibility."""
 
     def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self:
         """Fit the model by storing the classes."""

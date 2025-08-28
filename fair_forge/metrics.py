@@ -25,6 +25,7 @@ __all__ = [
 ]
 
 type Float = float | np.float16 | np.float32 | np.float64
+"""Union of common float types."""
 
 
 class Metric(Protocol):
@@ -58,6 +59,7 @@ class GroupMetric(Protocol):
 
 
 type LabelType = Literal["group", "y"]
+"""A type for specifying which labels to use (class or group labels)."""
 
 
 @dataclass

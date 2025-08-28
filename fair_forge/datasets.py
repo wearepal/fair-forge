@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Literal, NamedTuple, Protocol
+from typing import Literal, NamedTuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -10,19 +10,12 @@ from fair_forge.utils import reproducible_random_state
 
 __all__ = [
     "AdultGroup",
-    "Dataset",
     "GroupDataset",
     "grouping_by_prefix",
     "load_adult",
     "load_dummy_dataset",
     "load_ethicml_toy",
 ]
-
-
-class Dataset(Protocol):
-    data: NDArray
-    target: NDArray
-    feature_names: list[str]
 
 
 class GroupDataset(NamedTuple):
