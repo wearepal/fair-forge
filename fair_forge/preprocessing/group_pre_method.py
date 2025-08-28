@@ -16,9 +16,14 @@ __all__ = ["GroupPipeline", "UpsampleStrategy", "Upsampler"]
 
 @dataclass
 class GroupPipeline(BaseEstimator, GroupMethod):
+    """A pipeline that applies a group-based data modification method followed by an estimator."""
+
     group_data_modifier: GroupDatasetModifier
+    """A method to modify the dataset based on group information."""
     estimator: Method
+    """An estimator to fit the modified dataset."""
     random_state: int | None = None
+    """Random state for reproducibility."""
 
     def __post_init__(self) -> None:
         self.update_random_state()
@@ -54,12 +59,15 @@ class GroupPipeline(BaseEstimator, GroupMethod):
 
 
 type UpsampleStrategy = Literal["uniform", "naive"]  # , "preferential"]
+"""A type for specifying the strategy to use for upsampling."""
 
 
 @dataclass
 class Upsampler(BaseEstimator, GroupDatasetModifier):
     strategy: UpsampleStrategy = "uniform"
+    """The strategy to use for upsampling. Options are 'uniform' and 'naive'."""
     random_state: int = 0
+    """Random state for reproducibility."""
 
     def fit(
         self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]

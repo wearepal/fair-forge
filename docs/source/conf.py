@@ -21,16 +21,18 @@ author = "PAL developers"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.viewcode",
+    "sphinx.ext.napoleon",  # google-style docstrings
+    "sphinx.ext.viewcode",  # add a buttone for viewing the source code
 ]
 
-templates_path = ["_templates"]
+# templates_path = ["_templates"]
 exclude_patterns = []
-autosummary_imported_members = True  # include imports in the summary
-autosummary_ignore_module_all = False  # but if `__all__` is set, respect it
+autosummary_generate = True  # let autosummary generate stubs
+autosummary_imported_members = True  # include imports in the summary...
+autosummary_ignore_module_all = False  # ...but if `__all__` is set, respect it
+# We cannot set the following because the numpy docs imported through intersphinx
+# are of course written in numpy style.
 # napoleon_numpy_docstring = False
 
 intersphinx_mapping = {
@@ -40,8 +42,15 @@ intersphinx_mapping = {
 }
 
 autodoc_default_options = {
-    # "members": True,
-    # "special-members": "__call__",
+    # We set `members` to true so that the autosummary of modules actually contains
+    # the documentation of the module's members.
+    "members": True,
+    # `imported-members` is necessary so that classes and functions from submodules
+    # are documented as well.
+    "imported-members": True,
+    # We want to show the documentation for `__call__`.
+    "special-members": "__call__",
+    "show-inheritance": True,
 }
 
 # -- Options for HTML output -------------------------------------------------

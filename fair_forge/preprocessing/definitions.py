@@ -30,13 +30,19 @@ class GroupBasedTransform(_PreprocessorBase, Protocol):
 
     def fit(
         self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
-    ) -> Self: ...
+    ) -> Self:
+        """Fit the transformation to the data with group information."""
+        ...
 
-    def transform(self, X: NDArray[np.float32]) -> NDArray[np.float32]: ...
+    def transform(self, X: NDArray[np.float32]) -> NDArray[np.float32]:
+        """Transform the data using the fitted transformation."""
+        ...
 
     def fit_transform(
         self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
-    ) -> NDArray[np.float32]: ...
+    ) -> NDArray[np.float32]:
+        """Fit the transformation to the data with group information and transform the data."""
+        ...
 
 
 class GroupDatasetModifier(_PreprocessorBase, Protocol):
@@ -50,4 +56,15 @@ class GroupDatasetModifier(_PreprocessorBase, Protocol):
 
     def transform[S: np.generic](
         self, X: NDArray[S], *, is_train: bool = False, is_x: bool = False
-    ) -> NDArray[S]: ...
+    ) -> NDArray[S]:
+        """Transform the data using the fitted preprocessing method.
+        Args:
+            X: The data to transform.
+            is_train: Whether the data is training data. This can be used to apply
+            different transformations to training and test data.
+            is_x: Whether the data is features. This can be used to apply
+            different transformations to features and labels.
+        Returns:
+            The transformed data.
+        """
+        ...
