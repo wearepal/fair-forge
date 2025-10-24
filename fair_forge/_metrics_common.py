@@ -15,12 +15,12 @@ def renyi_correlation(x: NDArray[np.int32], y: NDArray[np.int32]) -> np.float64:
     total = len(x)
     assert total == len(y)
 
-    joint = np.empty((len(x_vals), len(y_vals)))
+    joint = np.empty((len(x_vals), len(y_vals)), dtype=np.float64)
 
     for i, x_val in enumerate(x_vals):
         for k, y_val in enumerate(y_vals):
             # count how often x_val and y_val co-occur
-            joint[i, k] = np.count_nonzero((x == x_val) & (y == y_val)).item() / total
+            joint[i, k] = np.count_nonzero((x == x_val) & (y == y_val)) / total
 
     marginal_rows = np.sum(joint, axis=0, keepdims=True)
     marginal_cols = np.sum(joint, axis=1, keepdims=True)
