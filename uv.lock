@@ -399,7 +399,7 @@ wheels = [
 
 [[package]]
 name = "fair-forge"
-version = "0.5.0.dev0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "polars" },
