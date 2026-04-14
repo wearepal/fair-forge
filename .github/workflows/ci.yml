@@ -61,10 +61,10 @@ jobs:
         run: uv sync --locked --all-extras --dev --group notebook
 
       - name: Run end-to-end example
-        run: uv run jupyter execute examples/full_example.ipynb
+        run: uv run jupyter execute --kernel_name=python3 examples/full_example.ipynb
 
       - name: Run dataset exploration
-        run: uv run jupyter execute examples/dataset_exploration.ipynb
+        run: uv run jupyter execute --kernel_name=python3 examples/dataset_exploration.ipynb
 
   doctests:
     runs-on: ubuntu-latest
