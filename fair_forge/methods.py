@@ -32,12 +32,16 @@ class _MethodBase(Protocol):
 
 
 class Method(_MethodBase, Protocol):
+    """Protocol for ML methods that can be used in the fair-forge framework."""
+
     def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self:
         """Fit the model to the data."""
         ...
 
 
 class SampleWeightMethod(_MethodBase, Protocol):
+    """Protocol for ML methods that support sample weights."""
+
     def fit(
         self,
         X: NDArray[np.float32],
@@ -50,6 +54,8 @@ class SampleWeightMethod(_MethodBase, Protocol):
 
 
 class GroupMethod(_MethodBase, Protocol):
+    """Protocol for ML methods that use group information during training."""
+
     def fit(
         self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
     ) -> Self:
@@ -114,6 +120,7 @@ def _compute_instance_weights(
             downweight them. Downweighting is done by multiplying the weights by the
             inverse of the group size and is more numerically stable for small group
             sizes. (Default: False)
+
     Returns:
         A dataframe with the instance weights for each sample in the training data.
     """

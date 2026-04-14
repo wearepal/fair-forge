@@ -16,6 +16,8 @@ class _PreprocessorBase(Protocol):
 
 
 class Preprocessor(_PreprocessorBase, Protocol):
+    """Protocol for a preprocessor which is fitted without group information."""
+
     def fit(self, X: NDArray[np.float32], y: NDArray[np.int32]) -> Self:
         """Fit the preprocessor to the data."""
         ...
