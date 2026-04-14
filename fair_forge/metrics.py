@@ -29,6 +29,8 @@ type Float = float | np.float16 | np.float32 | np.float64
 
 
 class Metric(Protocol):
+    """Protocol for a metric on the classes that optionally takes sample weights."""
+
     @property
     def __name__(self) -> str:
         """The name of the metric."""
@@ -44,6 +46,8 @@ class Metric(Protocol):
 
 
 class GroupMetric(Protocol):
+    """Protocol for a metric that takes group labels as well as class labels."""
+
     @property
     def __name__(self) -> str:
         """The name of the metric."""

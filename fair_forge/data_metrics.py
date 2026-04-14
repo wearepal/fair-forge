@@ -298,6 +298,7 @@ def hgr_corr(y: NDArray[np.int32], groups: NDArray[np.int32]) -> np.float64:
 
 
 def data_overview(ds: GroupDataset) -> pl.DataFrame:
+    """Compute a set of metrics that give an overview of the dataset."""
     data_metrics: list[DataMetric] = [
         DistanceFromUniform("y"),
         DistanceFromUniform("group"),

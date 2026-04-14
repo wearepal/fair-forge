@@ -150,6 +150,8 @@ class Model(nnx.Module):
 
 @dataclass
 class Beutel(BaseEstimator, GroupBasedTransform):
+    """Beutel et al.'s adversarially learned fair representations."""
+
     enc_size: list[int] = field(default_factory=lambda: [40])
     adv_size: list[int] = field(default_factory=lambda: [40])
     pred_size: list[int] = field(default_factory=lambda: [40])

@@ -26,9 +26,9 @@ class GroupPipeline(BaseEstimator, GroupMethod):
     """Random state for reproducibility."""
 
     def __post_init__(self) -> None:
-        self.update_random_state()
+        self._update_random_state()
 
-    def update_random_state(self) -> None:
+    def _update_random_state(self) -> None:
         if self.random_state is not None:
             self.group_data_modifier.set_params(random_state=self.random_state)
             self.estimator.set_params(random_state=self.random_state)
@@ -54,7 +54,7 @@ class GroupPipeline(BaseEstimator, GroupMethod):
 
     def set_params(self, **params: Any) -> Self:
         ret = super().set_params(**params)
-        self.update_random_state()
+        self._update_random_state()
         return ret
 
 
@@ -64,6 +64,12 @@ type UpsampleStrategy = Literal["uniform", "naive"]  # , "preferential"]
 
 @dataclass
 class Upsampler(BaseEstimator, GroupDatasetModifier):
+    """Upsampling for balancing the training set.
+
+    The upsampler selectively upsamples samples from the training set based on group and
+    label information to balance the dataset.
+    """
+
     strategy: UpsampleStrategy = "uniform"
     """The strategy to use for upsampling. Options are 'uniform' and 'naive'."""
     random_state: int = 0

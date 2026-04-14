@@ -49,6 +49,10 @@ def load_adult(
 
     Args:
         group: The group to use for the dataset.
+        group_in_features: Whether to include the group column in the features.
+        binarize_nationality: Whether to binarize the nationality column (United-States
+            vs Other).
+        binarize_race: Whether to binarize the race column (White vs Other).
 
     Returns:
         A Dataset object containing the Adult dataset.
