@@ -40,6 +40,9 @@ def iterate_forever[T: Array, *S](
     """Yield batches of the data tuple forever.
 
     Use `itertools.islice` to limit the number of batches.
+
+    Yields:
+        Tuple of batches of the data, where each batch has size `batch_size`.
     """
     elem = data[0]
     assert all(d.shape[0] == elem.shape[0] for d in data), (  # type: ignore

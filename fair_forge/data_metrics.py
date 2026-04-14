@@ -90,6 +90,10 @@ def _proportions(
     The second array contains the original label values, sorted in the same way the
     first array is sorted.
 
+    Returns:
+        A tuple of two arrays: the first array contains the proportions of each label
+        value, and the second array contains the original label values.
+
     Example:
 
         >>> y = np.array([2, -1, 2, 2, -1, -1, 2, 2], dtype=np.int32)
@@ -268,6 +272,9 @@ def hgr_corr(y: NDArray[np.int32], groups: NDArray[np.int32]) -> np.float64:
     perfect correlation. Note that the way "correlation" is understood here, anti-
     correlation also counts as correlation. The metric measures the highest possible
     correlation that can be achieved by transforming the values in any possible way.
+
+    Returns:
+        The HGR correlation between the y labels and the groups.
 
     Example:
 

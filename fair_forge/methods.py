@@ -104,13 +104,16 @@ def _compute_instance_weights(
     """Compute weights for all samples.
 
     Args:
-        train: The training data.
-        balance_groups: Whether to balance the groups. When False, the groups are balanced as in
-            `Kamiran and Calders 2012 <https://link.springer.com/article/10.1007/s10115-011-0463-8>`_.
+        y: The labels from the training data.
+        groups: The group memberships for the training data.
+        balance_groups: Whether to balance the groups. When False, the groups are
+            balanced as in `Kamiran and Calders 2012
+            <https://link.springer.com/article/10.1007/s10115-011-0463-8>`_.
             When True, the groups are numerically balanced. (Default: False)
-        upweight: If balance_groups is True, whether to upweight the groups, or to downweight
-            them. Downweighting is done by multiplying the weights by the inverse of the group size and
-            is more numerically stable for small group sizes. (Default: False)
+        upweight: If balance_groups is True, whether to upweight the groups, or to
+            downweight them. Downweighting is done by multiplying the weights by the
+            inverse of the group size and is more numerically stable for small group
+            sizes. (Default: False)
     Returns:
         A dataframe with the instance weights for each sample in the training data.
     """
@@ -128,9 +131,10 @@ def _compute_instance_weights(
             # Upweight samples according to the cardinality of their intersectional group
             num_samples / counts_joint
             if upweight
-            # Downweight samples according to the cardinality of their intersectional group
-            # - this approach should be preferred due to being more numerically stable
-            # (very small counts can lead to very large weighted loss values when upweighting)
+            # Downweight samples according to the cardinality of their intersectional
+            # group; this approach should be preferred due to being more numerically
+            # stable (very small counts can lead to very large weighted loss values when
+            # upweighting)
             else 1 - (counts_joint / num_samples)
         )
     else:
