@@ -1,5 +1,47 @@
 ![logo](./docs/source/_static/fair_forge_logo.svg)
 
+## What is fair-forge?
+
+fair-forge is a Python toolkit for developing and evaluating **group-aware machine learning** methods — models that take sensitive attributes (such as sex or race) into account during training in order to produce fairer outcomes.
+
+The library provides:
+
+- **Fairness metrics**: group-aware metrics that measure disparities across demographic groups (e.g. equalized odds gaps, demographic parity ratios). Standard metrics like accuracy can be used directly from [scikit-learn](https://scikit-learn.org), and fair-forge can turn any such metric into a group-aware variant via `as_group_metric()`.
+- **Fairness-aware methods**: these come in two flavours: *preprocessing methods* like `Upsampler`, which modify the training data and can be combined with any scikit-learn estimator via `GroupPipeline`; and *in-processing methods* like `Reweighting` ([Kamiran & Calders, 2012](https://link.springer.com/article/10.1007/s10115-011-0463-8)), which alter the training dynamics directly (e.g. by adjusting sample weights).
+- **An evaluation pipeline**: a single `evaluate()` call that handles train/test splitting, preprocessing, training multiple methods, and computing all metrics, returning a tidy Polars DataFrame of results.
+- **Example datasets**: including the Adult income dataset, ready to use out of the box.
+
+fair-forge is designed around **[scikit-learn](https://scikit-learn.org) compatibility**: methods follow the estimator API, standard scikit-learn metrics and models can be used directly, and preprocessing transforms work with scikit-learn Pipelines via metadata routing. This means you can mix and match fair-forge components with the broader scikit-learn ecosystem without any adapter code.
+
+### Quick example
+
+```python
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+import fair_forge as ff
+
+# Load the Adult dataset with "Sex" as the sensitive attribute
+adult = ff.load_adult("Sex")
+
+# Compare a standard model against a fairness-aware variant
+methods = {
+    "LR": LogisticRegression(),
+    "Reweighting": ff.Reweighting(LogisticRegression()),
+}
+
+# Evaluate with accuracy and the minimum accuracy over groups (“robust accuracy”)
+results = ff.evaluate(
+    dataset=adult,
+    methods=methods,
+    metrics=[accuracy_score],
+    group_metrics=ff.as_group_metric((accuracy_score,), ff.MetricAgg.MIN),
+)
+print(results)
+```
+
+For a complete walkthrough, see [`examples/full_example.ipynb`](examples/full_example.ipynb).
+
 ## Installation
 This library requires at least Python 3.12. Install it from pypi:
 
@@ -111,7 +153,7 @@ Besides methods which output a machine learning model, there are also methods wh
 ```python
 from sklearn.base import BaseEstimator
 
-class GroupBasedTransform(BaseEstimator):
+class MyGroupBasedTransform(BaseEstimator):
     def fit(
         self, X: NDArray[np.float32], y: NDArray[np.int32], *, groups: NDArray[np.int32]
     ) -> Self:
@@ -126,7 +168,7 @@ class GroupBasedTransform(BaseEstimator):
         pass
 ```
 
-(Unfortunately, you have to implement `fit_transform` manually, because otherwise it will not have the `groups` parameter.)
+(Unfortunately, you have to implement `fit_transform` manually, because otherwise it will not pass on the `groups` parameter.)
 
 Such transformation methods can then be combined with non-group-aware methods with scikit-learn’s [Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html):
 
@@ -139,17 +181,19 @@ from sklearn.svm import LinearSVC
 # set `enable_metadata_routing` to `True`.
 with config_context(enable_metadata_routing=True):
     estimator = LinearSVC(random_state=42, max_iter=100)
-    transform = GroupBasedTransform(random_state=42)
-	# We need to explicitly request here that the transformation's
-	# `fit` function gets the `groups` argument.
+    transform = MyGroupBasedTransform(random_state=42)
+    # We need to explicitly request here that the transformation's
+    # `fit` method gets the `groups` argument.
     transform.set_fit_request(groups=True)
 
     pipeline = Pipeline([("transform", transform), ("estimator", estimator)])
 
-	# This will call `fit_and_transform` on the Transformation
+    # This will call `fit_and_transform` on MyGroupBasedTransform
     pipeline.fit(train_x, train_y, groups=train_groups)
     preds = pipeline.predict(test_x)
 ```
+
+Alternatively, you can use `ff.GroupPipeline` which handles this specific case directly, without the need for metadata routing. However, `ff.GroupPipeline` is limited to exactly one transformation and one estimator.
 
 ### Utilities
 `fair-forge` provides many useful components for running experiments and collecting results:
