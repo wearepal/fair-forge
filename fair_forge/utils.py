@@ -22,6 +22,9 @@ def batched(
         len_data: The total number of data points.
         batch_size: The size of each batch.
         drop_last: If True, the last batch will be dropped if it is smaller than batch_size.
+
+    Yields:
+        A slice object representing the indices for the current batch.
     """
     for start in range(0, len_data, batch_size):
         end = start + batch_size

@@ -162,6 +162,9 @@ def load_dummy_dataset(seed: int) -> GroupDataset:
 
     Args:
         seed: Random seed for reproducibility.
+
+    Returns:
+        A Dataset object containing the dummy dataset.
     """
     generator = reproducible_random_state(seed)
 

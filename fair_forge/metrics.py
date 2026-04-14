@@ -97,7 +97,11 @@ def prob_pos(
 ) -> np.float64:
     """Probability of positive prediction.
 
-    example:
+    Returns:
+        The probability that the model predicts the positive class, i.e., the
+        proportion of samples predicted as positive.
+
+    Example:
 
         >>> import fair_forge as ff
         >>> y_true = np.array([0, 0, 0, 1], dtype=np.int32)
@@ -160,7 +164,8 @@ def _confusion_matrix(
 
     We assume that the positive class is 1.
 
-    Returns the 4 entries of the confusion matrix, and the total, as a 5-tuple.
+    Returns:
+        The 4 entries of the confusion matrix, and the total, as a 5-tuple.
     """
     conf_matr: NDArray[np.int64] = confusion_matrix(
         y_true=y_true, y_pred=y_pred, normalize=None, sample_weight=sample_weight
@@ -323,20 +328,20 @@ def as_group_metric(
                 )
             )
         if MetricAgg.INDIVIDUAL in agg:
-            metrics.append(
-                _BinaryAggMetric(
-                    metric=metric,
-                    agg_name="0",
-                    remove_score_suffix=remove_score_suffix,
-                    aggregator=lambda i, j: i,
-                )
-            )
-            metrics.append(
-                _BinaryAggMetric(
-                    metric=metric,
-                    agg_name="1",
-                    remove_score_suffix=remove_score_suffix,
-                    aggregator=lambda i, j: j,
+            metrics.extend(
+                (
+                    _BinaryAggMetric(
+                        metric=metric,
+                        agg_name="0",
+                        remove_score_suffix=remove_score_suffix,
+                        aggregator=lambda i, j: i,
+                    ),
+                    _BinaryAggMetric(
+                        metric=metric,
+                        agg_name="1",
+                        remove_score_suffix=remove_score_suffix,
+                        aggregator=lambda i, j: j,
+                    ),
                 )
             )
     return metrics
